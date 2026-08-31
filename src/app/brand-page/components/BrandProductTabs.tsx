@@ -44,7 +44,7 @@ export default function BrandProductTabs() {
             No Products Added Yet
           </h3>
           <p className="text-muted-foreground text-sm font-light max-w-sm mb-6 leading-relaxed">
-            Once this brand joins BrandMart and lists their products, they will appear here across all categories.
+            Once this brand joins ZEPNEX and lists their products, they will appear here across all categories.
           </p>
           <Link
             href="#join"

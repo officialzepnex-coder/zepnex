@@ -45,7 +45,7 @@ export default function BrandAbout() {
               <span className="italic font-light">Goes Here</span>
             </h2>
             <p className="text-muted-foreground font-light leading-relaxed mb-5 text-sm sm:text-base">
-              Once your brand joins BrandMart, your story, mission, and values will be showcased here. Tell your customers who you are, where you come from, and what makes your products special.
+              Once your brand joins ZEPNEX, your story, mission, and values will be showcased here. Tell your customers who you are, where you come from, and what makes your products special.
             </p>
             <p className="text-muted-foreground font-light leading-relaxed mb-8 text-sm sm:text-base">
               Share your journey, your craft, and your commitment to quality. This section helps shoppers connect with your brand on a deeper level.

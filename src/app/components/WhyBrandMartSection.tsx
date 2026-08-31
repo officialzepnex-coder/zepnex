@@ -6,7 +6,7 @@ const reasons = [
   {
     icon: 'ShieldCheckIcon',
     title: 'Verified Brand Partners',
-    desc: 'Every brand on BrandMart is manually vetted for quality, authenticity, and customer service standards before listing.',
+    desc: 'Every brand on ZEPNEX is manually vetted for quality, authenticity, and customer service standards before listing.',
   },
   {
     icon: 'TruckIcon',
@@ -21,11 +21,11 @@ const reasons = [
   {
     icon: 'CurrencyRupeeIcon',
     title: 'Best Price Guarantee',
-    desc: 'Brands offer exclusive deals on BrandMart. If you find it cheaper elsewhere, we match the price.',
+    desc: 'Brands offer exclusive deals on ZEPNEX. If you find it cheaper elsewhere, we match the price.',
   },
 ];
 
-export default function WhyBrandMartSection() {
+export default function WhyZEPNEXSection() {
   const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -60,7 +60,7 @@ export default function WhyBrandMartSection() {
               <span className="italic font-light text-primary">Kind of Shopper</span>
             </h2>
             <p className="text-white/60 font-light leading-relaxed mb-8 max-w-md">
-              Whether you're hunting for the latest trends, stocking up on household essentials, or discovering a new favorite brand — BrandMart is designed for you.
+              Whether you're hunting for the latest trends, stocking up on household essentials, or discovering a new favorite brand — ZEPNEX is designed for you.
             </p>
             <div className="flex flex-wrap gap-3">
               {['General Shoppers', 'Trend Hunters', 'Budget Families', 'Brand Loyalists'].map((tag) => (

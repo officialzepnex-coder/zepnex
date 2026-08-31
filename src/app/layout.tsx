@@ -24,8 +24,8 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
-  title: 'BrandMart — Discover & Shop India\'s Best Small Brands',
-  description: 'BrandMart is a premium multi-vendor marketplace connecting shoppers with unique small brands across clothes, daily essentials, and lifestyle products.',
+  title: 'ZEPNEX — Discover & Shop India\'s Best Small Brands',
+  description: 'ZEPNEX is a premium multi-vendor marketplace connecting shoppers with unique small brands across clothes, daily essentials, and lifestyle products.',
   icons: {
     icon: [{ url: '/favicon.ico', type: 'image/x-icon' }],
   },
@@ -37,7 +37,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body className={dmSans.className}>
         {children}
 
-        <script type="module" async src="https://static.rocket.new/rocket-web.js?_cfg=https%3A%2F%2Fbrandmart6347back.builtwithrocket.new&_be=https%3A%2F%2Fappanalytics.rocket.new&_v=0.1.20" />
+        <script type="module" async src="https://static.rocket.new/rocket-web.js?_cfg=https%3A%2F%2FZEPNEX6347back.builtwithrocket.new&_be=https%3A%2F%2Fappanalytics.rocket.new&_v=0.1.20" />
         <script type="module" defer src="https://static.rocket.new/rocket-shot.js?v=0.0.2" /></body>
     </html>
   );

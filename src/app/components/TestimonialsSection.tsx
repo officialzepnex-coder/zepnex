@@ -42,7 +42,7 @@ export default function TestimonialsSection() {
               No Reviews Yet
             </h3>
             <p className="text-muted-foreground text-sm font-light max-w-sm leading-relaxed">
-              Customer reviews will appear here once shoppers start purchasing from brands on BrandMart.
+              Customer reviews will appear here once shoppers start purchasing from brands on ZEPNEX.
             </p>
           </div>
 

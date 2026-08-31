@@ -44,7 +44,7 @@ export default function Header() {
           <Link href="/" className="flex items-center gap-2.5 flex-shrink-0 z-50">
             <AppLogo size={36} />
             <span className="font-display text-lg sm:text-xl tracking-tight text-foreground hidden sm:block font-semibold">
-              BrandMart
+              ZEPNEX
             </span>
           </Link>
 
@@ -154,7 +154,7 @@ export default function Header() {
                 onClick={() => setMenuOpen(false)}
               >
                 <Icon name="PlusIcon" size={16} variant="outline" />
-                Join BrandMart as a Brand
+                Join ZEPNEX as a Brand
               </Link>
             </div>
           </nav>

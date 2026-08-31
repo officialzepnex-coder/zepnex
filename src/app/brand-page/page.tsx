@@ -25,7 +25,7 @@ export default function JoinBrandPage() {
         <div className="relative py-16 sm:py-24 bg-gradient-to-b from-primary/10 to-background border-b border-border">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 text-center">
             <h1 className="text-3xl sm:text-5xl font-bold text-foreground mb-4">
-              Grow Your Brand on <span className="text-primary">BrandMart</span>
+              Grow Your Brand on <span className="text-primary">ZEPNEX</span>
             </h1>
             <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
               Join India's fastest-growing multi-brand marketplace. Reach millions of customers, boost your sales, and build your brand.
@@ -40,7 +40,7 @@ export default function JoinBrandPage() {
               {
                 icon: 'UserGroupIcon',
                 title: 'Reach Millions',
-                description: 'Access BrandMart\'s growing customer base across India'
+                description: 'Access ZEPNEX\'s growing customer base across India'
               },
               {
                 icon: 'ShoppingBagIcon',
@@ -81,7 +81,7 @@ export default function JoinBrandPage() {
             {/* Left — Info */}
             <div>
               <h2 className="text-3xl font-bold text-foreground mb-6">
-                Why Join BrandMart?
+                Why Join ZEPNEX?
               </h2>
               <ul className="space-y-4 text-muted-foreground">
                 {[
@@ -148,7 +148,7 @@ export default function JoinBrandPage() {
                       className="w-4 h-4 border border-border rounded accent-primary"
                     />
                     <span className="text-xs text-muted-foreground">
-                      I agree to BrandMart's Terms of Service and Privacy Policy
+                      I agree to ZEPNEX's Terms of Service and Privacy Policy
                     </span>
                   </label>
                 </div>

@@ -52,7 +52,7 @@ export default function JoinBrandCTA() {
               <span className="text-xs font-semibold tracking-[0.3em] uppercase text-primary mb-4 block">For Brands</span>
               <h2 className="font-display text-section-lg text-foreground font-semibold mb-5">
                 Grow Your Brand<br />
-                <span className="italic font-light text-primary">on BrandMart</span>
+                <span className="italic font-light text-primary">on ZEPNEX</span>
               </h2>
               <p className="text-muted-foreground font-light leading-relaxed mb-8 max-w-md">
                 Join 200+ brands already selling on India's most trusted multi-brand marketplace. Set up your brand page, upload products, and start reaching millions of shoppers today.

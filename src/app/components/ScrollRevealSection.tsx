@@ -10,7 +10,7 @@ const words = [
   { text: 'weekend', italic: false },
   { text: 'fashion', italic: true },
   { text: '—', italic: false },
-  { text: 'BrandMart', italic: false },
+  { text: 'ZEPNEX', italic: false },
   { text: 'has', italic: false },
   { text: 'every', italic: false },
   { text: 'brand', italic: true },

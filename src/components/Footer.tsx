@@ -28,7 +28,7 @@ export default function Footer() {
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2.5">
               <AppLogo size={32} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} />
-              <span className="font-display text-lg font-semibold text-foreground tracking-tight">BrandMart</span>
+              <span className="font-display text-lg font-semibold text-foreground tracking-tight">ZEPNEX</span>
             </div>
             <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">
               India's premium multi-brand marketplace for everyday shoppers and growing brands.
@@ -69,7 +69,7 @@ export default function Footer() {
         {/* Bottom row */}
         <div className="mt-8 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} BrandMart. All rights reserved.
+            &copy; {new Date().getFullYear()} ZEPNEX. All rights reserved.
           </p>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Icon name="PhoneIcon" size={12} variant="outline" />

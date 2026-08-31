@@ -198,10 +198,10 @@ export default function BrandsPage() {
           {/* Join as Brand CTA */}
           <div className="mt-16 pt-12 border-t border-border text-center">
             <h2 className="text-2xl font-bold text-foreground mb-4">
-              Want to Join <span className="text-primary">BrandMart</span>?
+              Want to Join <span className="text-primary">ZEPNEX</span>?
             </h2>
             <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-              Join thousands of brands already selling on BrandMart. Reach new customers, grow your business, and build your brand.
+              Join thousands of brands already selling on ZEPNEX. Reach new customers, grow your business, and build your brand.
             </p>
             <Link
               href="/brand-page"
