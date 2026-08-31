@@ -1,6 +1,6 @@
-# Next.js
+# ZEPNEX
 
-A modern Next.js 15 application built with TypeScript and Tailwind CSS.
+A modern Next.js 15 e-commerce marketplace built with TypeScript and Tailwind CSS.
 
 ## 🚀 Features
 
@@ -88,5 +88,4 @@ You can check out the [Next.js GitHub repository](https://github.com/vercel/next
 - Powered by Next.js and React
 - Styled with Tailwind CSS
 
-Built with ❤️ on Rocket.new# zepnex
-# zepnex
+Built with ❤️ on Rocket.new# ZEPNEX
