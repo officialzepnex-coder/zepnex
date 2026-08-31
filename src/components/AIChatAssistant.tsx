@@ -3,29 +3,6 @@
 import React, { useState } from 'react';
 import Icon from '@/components/ui/AppIcon';
 
-const teamMembers = [
-  {
-    name: 'Aarav Sharma',
-    role: 'Head of Growth',
-    image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80',
-  },
-  {
-    name: 'Meera Kapoor',
-    role: 'Brand Partnerships Lead',
-    image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
-  },
-  {
-    name: 'Rohan Verma',
-    role: 'Marketplace Operations',
-    image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80',
-  },
-  {
-    name: 'Nisha Sethi',
-    role: 'Customer Experience',
-    image: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=400&q=80',
-  },
-];
-
 const quickReplies = [
   'Show me trending products',
   'Find branded fashion deals',
@@ -150,21 +127,6 @@ export default function AIChatAssistant() {
       <div className="fixed bottom-5 right-24 z-[59] hidden md:block">
         <div className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-primary">
           AI Assistant
-        </div>
-      </div>
-
-      <div className="fixed bottom-24 right-5 z-[58] hidden lg:block">
-        <div className="rounded-xl border border-border bg-card p-3 shadow-lg">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Meet the team</p>
-          <div className="grid grid-cols-2 gap-3">
-            {teamMembers.map((member) => (
-              <div key={member.name} className="w-28 text-center">
-                <img src={member.image} alt={member.name} className="mx-auto h-20 w-20 rounded-full object-cover ring-2 ring-primary/20" />
-                <p className="mt-2 text-xs font-semibold text-foreground">{member.name}</p>
-                <p className="text-[10px] text-muted-foreground">{member.role}</p>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     </>
