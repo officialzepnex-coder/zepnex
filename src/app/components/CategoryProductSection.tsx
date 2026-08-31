@@ -2,13 +2,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
-import { products } from '@/data/products';
-
-const categories = ['All', 'Clothing', 'Daily Use', 'Electronics', 'Home & Living', 'Beauty', 'Sports'];
+import { useCatalog } from '@/lib/catalog';
 
 export default function CategoryProductSection() {
   const [activeCategory, setActiveCategory] = useState('All');
   const sectionRef = useRef<HTMLElement>(null);
+  const { products, categories: catalogCategories } = useCatalog();
+  const categories = ['All', ...catalogCategories];
 
   useEffect(() => {
     const observer = new IntersectionObserver(

@@ -1,6 +1,8 @@
 import React from 'react';
 import type { Metadata, Viewport } from 'next';
 import { Fraunces, DM_Sans } from 'next/font/google';
+import AIChatAssistant from '@/components/AIChatAssistant';
+import Providers from '@/components/Providers';
 import '../styles/tailwind.css';
 
 const fraunces = Fraunces({
@@ -35,7 +37,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" className={`${fraunces.variable} ${dmSans.variable}`}>
       <body className={dmSans.className}>
-        {children}
+        <Providers>{children}</Providers>
+        <AIChatAssistant />
 
         <script type="module" async src="https://static.rocket.new/rocket-web.js?_cfg=https%3A%2F%2FZEPNEX6347back.builtwithrocket.new&_be=https%3A%2F%2Fappanalytics.rocket.new&_v=0.1.20" />
         <script type="module" defer src="https://static.rocket.new/rocket-shot.js?v=0.0.2" /></body>

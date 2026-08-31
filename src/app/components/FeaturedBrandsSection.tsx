@@ -2,10 +2,11 @@
 import React, { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
-import { brands } from '@/data/brands';
+import { useCatalog } from '@/lib/catalog';
 
 export default function FeaturedBrandsSection() {
   const sectionRef = useRef<HTMLElement>(null);
+  const { brands } = useCatalog();
 
   useEffect(() => {
     const observer = new IntersectionObserver(

@@ -5,12 +5,12 @@ import { useParams } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Icon from '@/components/ui/AppIcon';
-import { products } from '@/data/products';
-import { brands } from '@/data/brands';
+import { useCatalog } from '@/lib/catalog';
 
 export default function ProductDetailPage() {
   const params = useParams();
   const productId = params.id as string;
+  const { products, brands } = useCatalog();
   const product = products.find(p => p.id === productId);
   const brand = product ? brands.find(b => b.id === product.brandId) : null;
   const [quantity, setQuantity] = useState(1);

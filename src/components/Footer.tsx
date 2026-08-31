@@ -6,8 +6,9 @@ import Icon from '@/components/ui/AppIcon';
 
 const footerLinks = [
   { label: 'Home', href: '/' },
-  { label: 'Brands', href: '/brand-page' },
+  { label: 'Brands', href: '/brands' },
   { label: 'Products', href: '/products' },
+  { label: 'Team', href: '/team' },
   { label: 'Privacy', href: '#' },
   { label: 'Terms', href: '#' },
 ];
@@ -32,9 +33,6 @@ export default function Footer() {
             </div>
             <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">
               India's premium multi-brand marketplace for everyday shoppers and growing brands.
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Founded by <span className="text-foreground font-medium">Shivam Bindal</span> &amp; <span className="text-foreground font-medium">Ronak Singh Shekhawat</span> &amp; <span className="text-foreground font-medium">Vedang Soni</span>
             </p>
           </div>
 

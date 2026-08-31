@@ -3,8 +3,10 @@ import React, { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import AppImage from '@/components/ui/AppImage';
 import Icon from '@/components/ui/AppIcon';
+import { useCatalog } from '@/lib/catalog';
 
 export default function HeroSection() {
+  const { homepage } = useCatalog();
   const heroRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -26,7 +28,7 @@ export default function HeroSection() {
       {/* Background */}
       <div className="hero-bg absolute inset-0 z-0 will-change-transform">
         <AppImage
-          src="https://img.rocket.new/generatedImages/rocket_gen_img_153c96c78-1773225913955.png"
+          src={homepage.image}
           alt="Bright airy marketplace shopping hall with warm natural light streaming through large windows, light stone floors, well-lit open space"
           fill
           priority
@@ -46,16 +48,16 @@ export default function HeroSection() {
           className="inline-block mb-5 text-xs font-semibold tracking-[0.35em] uppercase text-white/80 opacity-0"
           style={{ animation: 'fadeUp 0.9s cubic-bezier(0.16,1,0.3,1) 0.2s forwards' }}>
 
-          India's Premier Multi-Brand Marketplace
+          {homepage.eyebrow}
         </span>
 
         <h1
           className="font-display text-hero-xl text-white font-semibold leading-tight mb-6 opacity-0"
           style={{ animation: 'animationIn 1.1s cubic-bezier(0.16,1,0.3,1) 0.35s forwards' }}>
 
-          Every Brand You Love,<br />
+          {homepage.title}<br />
           <span className="italic font-light text-primary" style={{ filter: 'drop-shadow(0 2px 12px rgba(200,129,58,0.5))' }}>
-            One Place to Shop
+            {homepage.highlight}
           </span>
         </h1>
 
@@ -63,7 +65,7 @@ export default function HeroSection() {
           className="max-w-2xl mx-auto text-white/75 text-base sm:text-lg font-light leading-relaxed mb-10 opacity-0"
           style={{ animation: 'fadeUp 0.9s cubic-bezier(0.16,1,0.3,1) 0.55s forwards' }}>
 
-          Discover unique small brands, trending clothes, and daily essentials — curated for everyday shoppers, style hunters, budget families, and loyal brand followers.
+          {homepage.subtitle}
         </p>
 
         {/* Search Bar */}
@@ -94,14 +96,14 @@ export default function HeroSection() {
             className="px-8 py-3.5 bg-primary text-primary-foreground font-semibold text-sm uppercase tracking-wider hover:opacity-90 transition-opacity rounded-sm flex items-center gap-2 min-h-[44px]">
 
             <Icon name="ShoppingBagIcon" size={16} variant="outline" />
-            Shop Now
+            {homepage.ctaPrimary}
           </Link>
           <Link
-            href="/brand-page"
+            href="/brands"
             className="px-8 py-3.5 border-2 border-white/40 text-white font-medium text-sm uppercase tracking-wider hover:border-white hover:bg-white/10 transition-all rounded-sm flex items-center gap-2 min-h-[44px] backdrop-blur-sm">
 
             <Icon name="BuildingStorefrontIcon" size={16} variant="outline" />
-            Join as a Brand
+            {homepage.ctaSecondary}
           </Link>
         </div>
 
@@ -111,8 +113,6 @@ export default function HeroSection() {
           style={{ animation: 'fadeIn 1s ease 1.1s forwards' }}>
 
           {[
-          { icon: 'BuildingStorefrontIcon', label: '200+ Brands' },
-          { icon: 'ShoppingBagIcon', label: '50,000+ Products' },
           { icon: 'StarIcon', label: '4.8★ Rated' },
           { icon: 'TruckIcon', label: 'Pan-India Delivery' }].
           map((item) =>

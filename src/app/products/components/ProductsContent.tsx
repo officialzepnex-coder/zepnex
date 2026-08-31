@@ -2,15 +2,15 @@
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
-import { products } from '@/data/products';
-import { brands } from '@/data/brands';
+import { useCatalog } from '@/lib/catalog';
 
-const categories = ['All', 'Clothing', 'Daily Use', 'Electronics', 'Home & Living', 'Beauty', 'Sports'];
 const sortOptions = ['Relevance', 'Price: Low to High', 'Price: High to Low', 'Highest Rated', 'Most Reviews'];
 
 type PriceRange = { min: number; max: number };
 
 export default function ProductsContent() {
+  const { products, brands, categories: catalogCategories } = useCatalog();
+  const categories = ['All', ...catalogCategories];
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedSort, setSelectedSort] = useState('Relevance');
   const [priceRange, setPriceRange] = useState<PriceRange>({ min: 0, max: 5000 });
@@ -116,7 +116,11 @@ export default function ProductsContent() {
               {/* Brand Filter */}
               <div>
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Brand</h3>
-                <p className="text-xs text-muted-foreground italic">No brands joined yet</p>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {brands.slice(0, 8).map((b) => (
+                    <p key={b.id} className="text-xs text-foreground">{b.name}</p>
+                  ))}
+                </div>
               </div>
 
               {/* Price Range */}

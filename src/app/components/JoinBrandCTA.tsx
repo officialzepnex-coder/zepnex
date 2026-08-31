@@ -5,9 +5,7 @@ import AppImage from '@/components/ui/AppImage';
 import Icon from '@/components/ui/AppIcon';
 
 const benefits = [
-{ icon: 'ChartBarIcon', text: 'Access to 1.2M+ active shoppers' },
 { icon: 'CameraIcon', text: 'Free brand page setup & management' },
-{ icon: 'BanknotesIcon', text: 'Lowest marketplace commission (8%)' },
 { icon: 'ChartPieIcon', text: 'Real-time sales analytics dashboard' }];
 
 
@@ -55,7 +53,7 @@ export default function JoinBrandCTA() {
                 <span className="italic font-light text-primary">on ZEPNEX</span>
               </h2>
               <p className="text-muted-foreground font-light leading-relaxed mb-8 max-w-md">
-                Join 200+ brands already selling on India's most trusted multi-brand marketplace. Set up your brand page, upload products, and start reaching millions of shoppers today.
+                Join many brands already selling on India's most trusted multi-brand marketplace. Set up your brand page, upload products, and start reaching millions of shoppers today.
               </p>
               <ul className="space-y-3 mb-8">
                 {benefits.map((b) =>

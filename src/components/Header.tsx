@@ -8,6 +8,7 @@ const navLinks = [
   { label: 'Home', href: '/' },
   { label: 'Brands', href: '/brands' },
   { label: 'Products', href: '/products' },
+  { label: 'Team', href: '/team' },
 ];
 
 export default function Header() {

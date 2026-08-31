@@ -85,7 +85,6 @@ export default function JoinBrandPage() {
               </h2>
               <ul className="space-y-4 text-muted-foreground">
                 {[
-                  'Zero commission on first 100 orders',
                   'Free storefront setup and customization',
                   'Built-in payment gateway integration',
                   'Performance analytics and insights',
@@ -179,10 +178,6 @@ export default function JoinBrandPage() {
                 {
                   q: 'How long does approval take?',
                   a: 'Most applications are approved within 24-48 hours. We\'ll notify you via email about the status.'
-                },
-                {
-                  q: 'What are the fees involved?',
-                  a: 'We charge a small commission on each sale. New brands get zero commission on the first 100 orders!'
                 },
                 {
                   q: 'Can I list multiple product categories?',

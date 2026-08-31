@@ -5,12 +5,12 @@ import { useParams } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Icon from '@/components/ui/AppIcon';
-import { brands } from '@/data/brands';
-import { products } from '@/data/products';
+import { useCatalog } from '@/lib/catalog';
 
 export default function BrandDetailPage() {
   const params = useParams();
   const brandId = params.id as string;
+  const { brands, products, reviews: allReviews } = useCatalog();
   const brand = brands.find(b => b.id === brandId);
   const [following, setFollowing] = useState(false);
   const [activeTab, setActiveTab] = useState<'products' | 'about' | 'reviews'>('products');
@@ -33,12 +33,7 @@ export default function BrandDetailPage() {
   }
 
   const brandProducts = products.filter(p => p.brandId === brand.id);
-  const reviews = [
-    { author: 'Rahul Kumar', rating: 5, comment: 'Excellent quality products and fast delivery. Highly recommended!' },
-    { author: 'Priya Singh', rating: 4, comment: 'Good products but could improve on packaging.' },
-    { author: 'Amit Patel', rating: 5, comment: 'Amazing experience! Will definitely order again.' },
-    { author: 'Sneha Sharma', rating: 5, comment: 'Best quality in the market. Love this brand!' },
-  ];
+  const reviews = allReviews.filter((r) => r.kind === 'brand' && r.brand_id === brand.id);
 
   return (
     <main className="bg-background overflow-x-hidden">

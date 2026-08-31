@@ -4,11 +4,12 @@ import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Icon from '@/components/ui/AppIcon';
-import { brands } from '@/data/brands';
+import { useCatalog } from '@/lib/catalog';
 
 export default function BrandsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'verified' | 'new'>('all');
+  const { brands } = useCatalog();
 
   const filteredBrands = useMemo(() => {
     let result = [...brands];
