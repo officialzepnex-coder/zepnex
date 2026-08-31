@@ -27,7 +27,7 @@ export const products: Product[] = [
     originalPrice: 999,
     rating: 4.6,
     reviews: 234,
-    image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=product1&scale=80',
+    image: '/products/prod-1.png',
     description: 'Premium quality cotton t-shirt with perfect fit. Available in multiple colors.',
     inStock: true,
     badge: 'Sale'
@@ -42,7 +42,7 @@ export const products: Product[] = [
     originalPrice: 2499,
     rating: 4.7,
     reviews: 189,
-    image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=product2&scale=80',
+    image: '/products/prod-2.png',
     description: 'Trendy slim fit jeans with premium denim fabric. Comfortable and durable.',
     inStock: true,
     badge: 'Sale'
@@ -56,7 +56,7 @@ export const products: Product[] = [
     price: 699,
     rating: 4.5,
     reviews: 123,
-    image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=product3&scale=80',
+    image: '/products/prod-3.png',
     description: 'Light and breathable shorts perfect for summer. Multiple color options available.',
     inStock: true
   },
@@ -71,7 +71,7 @@ export const products: Product[] = [
     originalPrice: 3999,
     rating: 4.8,
     reviews: 287,
-    image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=product4&scale=80',
+    image: '/products/prod-4.png',
     description: 'Premium organic cotton bedsheet set. Eco-friendly and supremely comfortable.',
     inStock: true,
     badge: 'New'
@@ -85,7 +85,7 @@ export const products: Product[] = [
     price: 899,
     rating: 4.4,
     reviews: 156,
-    image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=product5&scale=80',
+    image: '/products/prod-5.png',
     description: 'Sustainable bamboo cutting board set for your kitchen. Durable and eco-friendly.',
     inStock: true
   },
@@ -98,7 +98,7 @@ export const products: Product[] = [
     price: 1299,
     rating: 4.6,
     reviews: 198,
-    image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=product6&scale=80',
+    image: '/products/prod-6.png',
     description: 'Reusable glass food storage containers. Plastic-free and sustainable solution.',
     inStock: true,
     badge: 'Best Seller'
@@ -114,7 +114,7 @@ export const products: Product[] = [
     originalPrice: 5999,
     rating: 4.7,
     reviews: 412,
-    image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=product7&scale=80',
+    image: '/products/prod-7.png',
     description: 'Premium wireless earbuds with active noise cancellation. 30-hour battery life.',
     inStock: true,
     badge: 'Sale'
@@ -128,7 +128,7 @@ export const products: Product[] = [
     price: 399,
     rating: 4.5,
     reviews: 267,
-    image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=product8&scale=80',
+    image: '/products/prod-8.png',
     description: 'Durable USB-C charging cable with fast charging support. 2-meter length.',
     inStock: true
   },
@@ -141,7 +141,7 @@ export const products: Product[] = [
     price: 799,
     rating: 4.6,
     reviews: 324,
-    image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=product9&scale=80',
+    image: '/products/prod-9.png',
     description: 'WiFi-enabled smart bulb with 16 million color options. Voice control compatible.',
     inStock: true,
     badge: 'New'
@@ -157,7 +157,7 @@ export const products: Product[] = [
     originalPrice: 1299,
     rating: 4.8,
     reviews: 456,
-    image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=product10&scale=80',
+    image: '/products/prod-10.png',
     description: 'Gentle, natural face cleanser suitable for all skin types. Cruelty-free and organic.',
     inStock: true,
     badge: 'Best Seller'
@@ -171,7 +171,7 @@ export const products: Product[] = [
     price: 1299,
     rating: 4.9,
     reviews: 378,
-    image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=product11&scale=80',
+    image: '/products/prod-11.png',
     description: 'Brightening vitamin C serum. Dermatologist-tested and highly effective.',
     inStock: true
   },
@@ -184,7 +184,7 @@ export const products: Product[] = [
     price: 899,
     rating: 4.7,
     reviews: 289,
-    image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=product12&scale=80',
+    image: '/products/prod-12.png',
     description: 'Rich night cream with natural ingredients. Restore and rejuvenate your skin.',
     inStock: true
   },
@@ -199,7 +199,7 @@ export const products: Product[] = [
     originalPrice: 2499,
     rating: 4.6,
     reviews: 267,
-    image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=product13&scale=80',
+    image: '/products/prod-13.png',
     description: 'Non-slip yoga mat with extra cushioning. Lightweight and eco-friendly TPE material.',
     inStock: true,
     badge: 'Sale'
@@ -213,7 +213,7 @@ export const products: Product[] = [
     price: 3999,
     rating: 4.8,
     reviews: 345,
-    image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=product14&scale=80',
+    image: '/products/prod-14.png',
     description: 'Adjustable dumbbells from 5kg to 25kg. Perfect for home workouts.',
     inStock: true,
     badge: 'New'
@@ -228,7 +228,7 @@ export const products: Product[] = [
     originalPrice: 4999,
     rating: 4.7,
     reviews: 198,
-    image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=product15&scale=80',
+    image: '/products/prod-15.png',
     description: 'Comfortable running shoes with advanced cushioning technology.',
     inStock: true,
     badge: 'Sale'
@@ -244,7 +244,7 @@ export const products: Product[] = [
     originalPrice: 599,
     rating: 4.5,
     reviews: 123,
-    image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=product16&scale=80',
+    image: '/products/prod-16.png',
     description: 'Premium roasted almonds with no added sugar. Healthy and delicious.',
     inStock: true,
     badge: 'Best Seller'
@@ -258,7 +258,7 @@ export const products: Product[] = [
     price: 299,
     rating: 4.4,
     reviews: 89,
-    image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=product17&scale=80',
+    image: '/products/prod-17.png',
     description: 'Organic granola cereal with natural honey and dried fruits.',
     inStock: true
   },
@@ -271,7 +271,7 @@ export const products: Product[] = [
     price: 499,
     rating: 4.6,
     reviews: 145,
-    image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=product18&scale=80',
+    image: '/products/prod-18.png',
     description: 'Premium dark chocolate bars with 70% cocoa. Pack of 5.',
     inStock: true
   }

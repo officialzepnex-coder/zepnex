@@ -8,22 +8,22 @@ import Icon from '@/components/ui/AppIcon';
 
 const teamMembers = [
   {
-    name: 'Aarav Sharma',
-    role: 'Head of Growth',
-    image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=600&q=80',
-    bio: 'Drives acquisition, partnerships, and marketplace scale across India.',
+    name: 'Shivam Bindal',
+    role: 'Founder',
+    image: '/team/shivam-bindal.jpg',
+    bio: 'Founder of ZEPNEX, driving the vision to build the future of shopping for modern India.',
   },
   {
-    name: 'Meera Kapoor',
-    role: 'Brand Partnerships Lead',
-    image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=600&q=80',
-    bio: 'Builds relationships with emerging brands and helps them launch faster.',
+    name: 'Ronak Singh',
+    role: 'Co-Founder',
+    image: '/team/ronak-singh.jpg',
+    bio: 'Co-Founder of ZEPNEX, shaping strategy, partnerships, and marketplace growth.',
   },
   {
-    name: 'Rohan Verma',
-    role: 'Marketplace Operations',
-    image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=600&q=80',
-    bio: 'Makes sure every order, listing, and delivery flow runs smoothly.',
+    name: 'Vedang Soni',
+    role: 'CTO & Logistics Head',
+    image: '/team/vedang-soni.jpg',
+    bio: 'CTO and Logistics Head of ZEPNEX, leading technology and end-to-end delivery operations.',
   },
   {
     name: 'Nisha Sethi',
