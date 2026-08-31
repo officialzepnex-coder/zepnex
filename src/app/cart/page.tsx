@@ -21,7 +21,7 @@ export default function CartPage() {
       name: 'Classic Cotton T-Shirt',
       price: 499,
       quantity: 2,
-      image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=product1&scale=80',
+      image: '/products/prod-1.png',
       brand: 'TrendStyle Co.'
     },
     {
@@ -29,7 +29,7 @@ export default function CartPage() {
       name: 'Wireless Bluetooth Earbuds',
       price: 2999,
       quantity: 1,
-      image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=product7&scale=80',
+      image: '/products/prod-7.png',
       brand: 'TechGear Pro'
     },
     {
@@ -37,7 +37,7 @@ export default function CartPage() {
       name: 'Organic Cotton Bedsheet Set',
       price: 2499,
       quantity: 1,
-      image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=product4&scale=80',
+      image: '/products/prod-4.png',
       brand: 'EcoHome Living'
     }
   ]);
