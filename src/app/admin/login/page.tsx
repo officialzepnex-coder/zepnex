@@ -46,9 +46,12 @@ export default function AdminLoginPage() {
 
       if (profileError) throw profileError;
       if (!profile || (profile as { role?: string }).role !== 'admin') {
-        // If not explicit admin in DB, allow dev login or show notice
-        console.warn('User profile does not have role=admin yet.');
+        await supabase.auth.signOut();
+        throw new Error('This Supabase user is not an admin yet. Run: update public.profiles set role = \'admin\' where email = \'your-email@example.com\';');
       }
+
+      localStorage.removeItem('zepnex_demo_admin_active');
+      document.cookie = 'zepnex_demo_admin_active=; path=/; max-age=0; SameSite=Lax';
 
       router.push('/admin');
       router.refresh();
@@ -63,6 +66,7 @@ export default function AdminLoginPage() {
     // Instant dev/demo bypass into Admin Suite
     if (typeof window !== 'undefined') {
       localStorage.setItem('zepnex_demo_admin_active', 'true');
+      document.cookie = 'zepnex_demo_admin_active=true; path=/; max-age=2592000; SameSite=Lax';
     }
     router.push('/admin');
     router.refresh();

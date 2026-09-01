@@ -3,6 +3,7 @@
 import React from 'react';
 import { inputClass } from './AdminShell';
 import { createClient } from '@/lib/supabase/client';
+import { isDemoAdminMode, isSupabaseConfigured } from '@/lib/supabase/config';
 
 export default function ImageField({
   label,
@@ -25,6 +26,9 @@ export default function ImageField({
     setBusy(true);
     setError('');
     try {
+      if (!isSupabaseConfigured() || isDemoAdminMode()) {
+        throw new Error('File upload needs Supabase Live mode. Paste an image URL while using Local Cache/Demo mode.');
+      }
       const supabase = createClient();
       const ext = file.name.split('.').pop() || 'jpg';
       const path = `${folder}/${crypto.randomUUID()}.${ext}`;

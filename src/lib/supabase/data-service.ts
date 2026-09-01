@@ -1,7 +1,7 @@
 'use client';
 
 import { createClient } from './client';
-import { isSupabaseConfigured } from './config';
+import { isDemoAdminMode, isSupabaseConfigured } from './config';
 import { brands as initialBrands } from '@/data/brands';
 import { products as initialProducts } from '@/data/products';
 import {
@@ -227,15 +227,25 @@ function getLocal<T>(key: string, fallback: T): T {
   }
 }
 
-function setLocal<T>(key: string, value: T): void {
+function setLocal<T>(key: string, value: T, notify = true): void {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(LOCAL_STORAGE_KEY_PREFIX + key, JSON.stringify(value));
-    // Trigger storage event for live tab updates
-    window.dispatchEvent(new CustomEvent('zepnex_catalog_updated', { detail: { key } }));
+    if (notify) {
+      window.dispatchEvent(new CustomEvent('zepnex_catalog_updated', { detail: { key } }));
+    }
   } catch (e) {
     console.error('Failed to save to localStorage:', e);
   }
+}
+
+function shouldUseSupabase() {
+  return isSupabaseConfigured() && !isDemoAdminMode();
+}
+
+function failSupabaseWrite(action: string, error: unknown): never {
+  if (error instanceof Error) throw error;
+  throw new Error(`${action} failed in Supabase.`);
 }
 
 // Data Service Singleton
@@ -258,7 +268,7 @@ export class DataService {
   }
 
   public static async getPublicCatalog() {
-    if (!isSupabaseConfigured()) {
+    if (!shouldUseSupabase()) {
       return this.getCachedPublicCatalog();
     }
 
@@ -309,12 +319,12 @@ export class DataService {
       const rawHomepage = (homepageResult.data as any)?.value;
       const homepageSettings = rawHomepage ? { ...DEFAULT_HOMEPAGE, ...(rawHomepage as object) } : DEFAULT_HOMEPAGE;
 
-      setLocal('brands', brandRows);
-      setLocal('products', productRows);
-      setLocal('categories', categoryRows);
-      setLocal('reviews', reviewRows);
-      setLocal('faqs', faqRows);
-      setLocal('homepage_settings', homepageSettings);
+      setLocal('brands', brandRows, false);
+      setLocal('products', productRows, false);
+      setLocal('categories', categoryRows, false);
+      setLocal('reviews', reviewRows, false);
+      setLocal('faqs', faqRows, false);
+      setLocal('homepage_settings', homepageSettings, false);
 
       return { brandRows, productRows, categoryRows, reviewRows, faqRows, homepageSettings };
     } catch (error) {
@@ -324,11 +334,14 @@ export class DataService {
   }
 
   public static async checkConnection(): Promise<{ ok: boolean; message: string; isFallback: boolean }> {
-    if (!isSupabaseConfigured()) {
+    if (!shouldUseSupabase()) {
+      const message = isDemoAdminMode()
+        ? 'Running in Demo Admin Mode (Local Cache only). Sign out and use Supabase Auth for live database writes.'
+        : 'Running in Local Cache Mode. Add Supabase keys to connect live database.';
       return {
         ok: true,
         isFallback: true,
-        message: 'Running in Local/Demo Mode (Persistent Cache). Add Supabase keys to connect live database.',
+        message,
       };
     }
     try {
@@ -385,12 +398,12 @@ export class DataService {
 
   // BRANDS
   public static async getBrands(): Promise<BrandRow[]> {
-    if (isSupabaseConfigured()) {
+    if (shouldUseSupabase()) {
       try {
         const supabase = createClient();
         const { data, error } = await supabase.from('brands').select('*').order('name');
         if (!error && data) {
-          setLocal('brands', data as BrandRow[]);
+          setLocal('brands', data as BrandRow[], false);
           return data as BrandRow[];
         }
         if (error) console.warn('Falling back to local brands:', error.message);
@@ -433,7 +446,7 @@ export class DataService {
       updated_at: now,
     };
 
-    if (isSupabaseConfigured()) {
+    if (shouldUseSupabase()) {
       try {
         const supabase = createClient();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -461,7 +474,7 @@ export class DataService {
     const brands = await this.getBrands();
     const brand = brands.find((b) => b.id === id);
 
-    if (isSupabaseConfigured()) {
+    if (shouldUseSupabase()) {
       try {
         const supabase = createClient();
         const { error } = await supabase.from('brands').delete().eq('id', id);
@@ -479,12 +492,12 @@ export class DataService {
 
   // PRODUCTS
   public static async getProducts(): Promise<ProductRow[]> {
-    if (isSupabaseConfigured()) {
+    if (shouldUseSupabase()) {
       try {
         const supabase = createClient();
         const { data, error } = await supabase.from('products').select('*').order('name');
         if (!error && data) {
-          setLocal('products', data as ProductRow[]);
+          setLocal('products', data as ProductRow[], false);
           return data as ProductRow[];
         }
         if (error) console.warn('Falling back to local products:', error.message);
@@ -532,7 +545,7 @@ export class DataService {
       updated_at: now,
     };
 
-    if (isSupabaseConfigured()) {
+    if (shouldUseSupabase()) {
       try {
         const supabase = createClient();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -560,12 +573,13 @@ export class DataService {
     const products = await this.getProducts();
     const product = products.find((p) => p.id === id);
 
-    if (isSupabaseConfigured()) {
+    if (shouldUseSupabase()) {
       try {
         const supabase = createClient();
-        await supabase.from('products').delete().eq('id', id);
-      } catch (e) {
-        console.warn('Supabase delete product failed:', e);
+        const { error } = await supabase.from('products').delete().eq('id', id);
+        if (error) throw new Error(`Product delete failed: ${error.message}`);
+      } catch (error) {
+        failSupabaseWrite('Product delete', error);
       }
     }
 
@@ -579,12 +593,13 @@ export class DataService {
     if (ids.length === 0) return;
     const products = await this.getProducts();
 
-    if (isSupabaseConfigured()) {
+    if (shouldUseSupabase()) {
       try {
         const supabase = createClient();
-        await supabase.from('products').delete().in('id', ids);
-      } catch (e) {
-        console.warn('Bulk delete failed in Supabase:', e);
+        const { error } = await supabase.from('products').delete().in('id', ids);
+        if (error) throw new Error(`Bulk product delete failed: ${error.message}`);
+      } catch (error) {
+        failSupabaseWrite('Bulk product delete', error);
       }
     }
 
@@ -597,13 +612,14 @@ export class DataService {
     if (ids.length === 0) return;
     const products = await this.getProducts();
 
-    if (isSupabaseConfigured()) {
+    if (shouldUseSupabase()) {
       try {
         const supabase = createClient();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase.from('products') as any).update(updates).in('id', ids);
-      } catch (e) {
-        console.warn('Bulk update failed in Supabase:', e);
+        const { error } = await (supabase.from('products') as any).update(updates).in('id', ids);
+        if (error) throw new Error(`Bulk product update failed: ${error.message}`);
+      } catch (error) {
+        failSupabaseWrite('Bulk product update', error);
       }
     }
 
@@ -614,12 +630,12 @@ export class DataService {
 
   // CATEGORIES
   public static async getCategories(): Promise<CategoryRow[]> {
-    if (isSupabaseConfigured()) {
+    if (shouldUseSupabase()) {
       try {
         const supabase = createClient();
         const { data, error } = await supabase.from('categories').select('*').order('sort_order');
         if (!error && data) {
-          setLocal('categories', data as CategoryRow[]);
+          setLocal('categories', data as CategoryRow[], false);
           return data as CategoryRow[];
         }
         if (error) console.warn('Falling back to local categories:', error.message);
@@ -641,13 +657,14 @@ export class DataService {
       icon: category.icon || 'Folder',
     };
 
-    if (isSupabaseConfigured()) {
+    if (shouldUseSupabase()) {
       try {
         const supabase = createClient();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase.from('categories') as any).upsert(payload);
-      } catch (e) {
-        console.warn('Supabase upsert category failed:', e);
+        const { error } = await (supabase.from('categories') as any).upsert(payload);
+        if (error) throw new Error(`Category save failed: ${error.message}`);
+      } catch (error) {
+        failSupabaseWrite('Category save', error);
       }
     }
 
@@ -662,12 +679,13 @@ export class DataService {
     const categories = await this.getCategories();
     const cat = categories.find((c) => c.id === id);
 
-    if (isSupabaseConfigured()) {
+    if (shouldUseSupabase()) {
       try {
         const supabase = createClient();
-        await supabase.from('categories').delete().eq('id', id);
-      } catch (e) {
-        console.warn('Supabase delete category failed:', e);
+        const { error } = await supabase.from('categories').delete().eq('id', id);
+        if (error) throw new Error(`Category delete failed: ${error.message}`);
+      } catch (error) {
+        failSupabaseWrite('Category delete', error);
       }
     }
 
@@ -679,12 +697,12 @@ export class DataService {
 
   // REVIEWS
   public static async getReviews(): Promise<ReviewRow[]> {
-    if (isSupabaseConfigured()) {
+    if (shouldUseSupabase()) {
       try {
         const supabase = createClient();
         const { data, error } = await supabase.from('reviews').select('*').order('created_at', { ascending: false });
         if (!error && data) {
-          setLocal('reviews', data as ReviewRow[]);
+          setLocal('reviews', data as ReviewRow[], false);
           return data as ReviewRow[];
         }
         if (error) console.warn('Falling back to local reviews:', error.message);
@@ -714,13 +732,14 @@ export class DataService {
       updated_at: now,
     };
 
-    if (isSupabaseConfigured()) {
+    if (shouldUseSupabase()) {
       try {
         const supabase = createClient();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase.from('reviews') as any).upsert(payload);
-      } catch (e) {
-        console.warn('Supabase upsert review failed:', e);
+        const { error } = await (supabase.from('reviews') as any).upsert(payload);
+        if (error) throw new Error(`Review save failed: ${error.message}`);
+      } catch (error) {
+        failSupabaseWrite('Review save', error);
       }
     }
 
@@ -736,12 +755,13 @@ export class DataService {
     const current = await this.getReviews();
     const review = current.find((r) => r.id === id);
 
-    if (isSupabaseConfigured()) {
+    if (shouldUseSupabase()) {
       try {
         const supabase = createClient();
-        await supabase.from('reviews').delete().eq('id', id);
-      } catch (e) {
-        console.warn('Supabase delete review failed:', e);
+        const { error } = await supabase.from('reviews').delete().eq('id', id);
+        if (error) throw new Error(`Review delete failed: ${error.message}`);
+      } catch (error) {
+        failSupabaseWrite('Review delete', error);
       }
     }
 
@@ -753,12 +773,12 @@ export class DataService {
 
   // BRAND APPLICATIONS
   public static async getApplications(): Promise<ApplicationRow[]> {
-    if (isSupabaseConfigured()) {
+    if (shouldUseSupabase()) {
       try {
         const supabase = createClient();
         const { data, error } = await supabase.from('brand_applications').select('*').order('created_at', { ascending: false });
         if (!error && data) {
-          setLocal('brand_applications', data as ApplicationRow[]);
+          setLocal('brand_applications', data as ApplicationRow[], false);
           return data as ApplicationRow[];
         }
         if (error) console.warn('Falling back to local applications:', error.message);
@@ -785,13 +805,14 @@ export class DataService {
       updated_at: now,
     };
 
-    if (isSupabaseConfigured()) {
+    if (shouldUseSupabase()) {
       try {
         const supabase = createClient();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase.from('brand_applications') as any).upsert(payload);
-      } catch (e) {
-        console.warn('Supabase upsert application failed:', e);
+        const { error } = await (supabase.from('brand_applications') as any).upsert(payload);
+        if (error) throw new Error(`Application save failed: ${error.message}`);
+      } catch (error) {
+        failSupabaseWrite('Application save', error);
       }
     }
 
@@ -833,12 +854,13 @@ export class DataService {
     const current = await this.getApplications();
     const app = current.find((a) => a.id === id);
 
-    if (isSupabaseConfigured()) {
+    if (shouldUseSupabase()) {
       try {
         const supabase = createClient();
-        await supabase.from('brand_applications').delete().eq('id', id);
-      } catch (e) {
-        console.warn('Supabase delete application failed:', e);
+        const { error } = await supabase.from('brand_applications').delete().eq('id', id);
+        if (error) throw new Error(`Application delete failed: ${error.message}`);
+      } catch (error) {
+        failSupabaseWrite('Application delete', error);
       }
     }
 
@@ -850,12 +872,12 @@ export class DataService {
 
   // FAQS
   public static async getFaqs(): Promise<FaqRow[]> {
-    if (isSupabaseConfigured()) {
+    if (shouldUseSupabase()) {
       try {
         const supabase = createClient();
         const { data, error } = await supabase.from('faqs').select('*').order('sort_order');
         if (!error && data) {
-          setLocal('faqs', data as FaqRow[]);
+          setLocal('faqs', data as FaqRow[], false);
           return data as FaqRow[];
         }
         if (error) console.warn('Falling back to local faqs:', error.message);
@@ -883,13 +905,14 @@ export class DataService {
       updated_at: now,
     };
 
-    if (isSupabaseConfigured()) {
+    if (shouldUseSupabase()) {
       try {
         const supabase = createClient();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase.from('faqs') as any).upsert(payload);
-      } catch (e) {
-        console.warn('Supabase upsert FAQ failed:', e);
+        const { error } = await (supabase.from('faqs') as any).upsert(payload);
+        if (error) throw new Error(`FAQ save failed: ${error.message}`);
+      } catch (error) {
+        failSupabaseWrite('FAQ save', error);
       }
     }
 
@@ -904,12 +927,13 @@ export class DataService {
     const current = await this.getFaqs();
     const faq = current.find((f) => f.id === id);
 
-    if (isSupabaseConfigured()) {
+    if (shouldUseSupabase()) {
       try {
         const supabase = createClient();
-        await supabase.from('faqs').delete().eq('id', id);
-      } catch (e) {
-        console.warn('Supabase delete FAQ failed:', e);
+        const { error } = await supabase.from('faqs').delete().eq('id', id);
+        if (error) throw new Error(`FAQ delete failed: ${error.message}`);
+      } catch (error) {
+        failSupabaseWrite('FAQ delete', error);
       }
     }
 
@@ -921,12 +945,12 @@ export class DataService {
 
   // TEAM MEMBERS
   public static async getTeamMembers(): Promise<TeamMemberRow[]> {
-    if (isSupabaseConfigured()) {
+    if (shouldUseSupabase()) {
       try {
         const supabase = createClient();
         const { data, error } = await supabase.from('team_members').select('*').order('sort_order');
         if (!error && data) {
-          setLocal('team_members', data as TeamMemberRow[]);
+          setLocal('team_members', data as TeamMemberRow[], false);
           return data as TeamMemberRow[];
         }
       } catch (e) {
@@ -952,7 +976,7 @@ export class DataService {
       created_at: member.created_at || now,
       updated_at: now,
     };
-    if (isSupabaseConfigured()) {
+    if (shouldUseSupabase()) {
       const supabase = createClient();
       const { error } = await (supabase.from('team_members') as any).upsert(payload);
       if (error) throw new Error(`Team member save failed: ${error.message}`);
@@ -964,7 +988,7 @@ export class DataService {
   }
 
   public static async deleteTeamMember(id: string): Promise<boolean> {
-    if (isSupabaseConfigured()) {
+    if (shouldUseSupabase()) {
       const supabase = createClient();
       const { error } = await supabase.from('team_members').delete().eq('id', id);
       if (error) throw new Error(`Team member delete failed: ${error.message}`);
@@ -976,7 +1000,7 @@ export class DataService {
 
   // SITE SETTINGS & HOMEPAGE
   public static async getHomepageSettings(): Promise<HomepageSettings> {
-    if (isSupabaseConfigured()) {
+    if (shouldUseSupabase()) {
       try {
         const supabase = createClient();
         const { data, error } = await supabase.from('site_settings').select('*').eq('key', 'homepage').maybeSingle();
@@ -984,7 +1008,7 @@ export class DataService {
         const rawValue = (data as any)?.value;
         if (!error && rawValue) {
           const settings = { ...DEFAULT_HOMEPAGE, ...(rawValue as object) };
-          setLocal('homepage_settings', settings);
+          setLocal('homepage_settings', settings, false);
           return settings;
         }
       } catch (e) {
@@ -995,17 +1019,18 @@ export class DataService {
   }
 
   public static async saveHomepageSettings(settings: HomepageSettings): Promise<HomepageSettings> {
-    if (isSupabaseConfigured()) {
+    if (shouldUseSupabase()) {
       try {
         const supabase = createClient();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase.from('site_settings') as any).upsert({
+        const { error } = await (supabase.from('site_settings') as any).upsert({
           key: 'homepage',
           value: settings as unknown as Record<string, unknown>,
           updated_at: new Date().toISOString(),
         });
-      } catch (e) {
-        console.warn('Supabase save settings failed:', e);
+        if (error) throw new Error(`Homepage settings save failed: ${error.message}`);
+      } catch (error) {
+        failSupabaseWrite('Homepage settings save', error);
       }
     }
 
@@ -1071,3 +1096,4 @@ export class DataService {
     this.addLog('sync', 'database', 'Imported marketplace catalog backup file');
   }
 }
+

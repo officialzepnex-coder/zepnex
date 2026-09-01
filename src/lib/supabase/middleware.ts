@@ -16,6 +16,11 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.next({ request });
   }
 
+  const hasDemoCookie = request.cookies.get('zepnex_demo_admin_active')?.value === 'true';
+  if (hasDemoCookie) {
+    return NextResponse.next({ request });
+  }
+
   if (!isSupabaseConfigured()) {
     // If not configured, allow access in demo mode
     return NextResponse.next({ request });
@@ -55,14 +60,24 @@ export async function updateSession(request: NextRequest) {
 
     if (!user && !isLogin) {
       // If genuine Supabase project is connected and user not logged in, redirect to login
-      // but if demo cookie is present, allow through
-      const hasDemoCookie = request.cookies.get('zepnex_demo_admin_active');
-      if (hasDemoCookie) {
-        return NextResponse.next({ request });
-      }
       const url = request.nextUrl.clone();
       url.pathname = '/admin/login';
       return NextResponse.redirect(url);
+    }
+
+    if (user) {
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (profileError || profile?.role !== 'admin') {
+        const url = request.nextUrl.clone();
+        url.pathname = '/admin/login';
+        url.searchParams.set('error', 'admin_required');
+        return NextResponse.redirect(url);
+      }
     }
 
     if (user && isLogin) {

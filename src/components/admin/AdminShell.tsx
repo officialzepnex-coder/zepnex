@@ -27,7 +27,7 @@ import {
   Users,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { isSupabaseConfigured } from '@/lib/supabase/config';
+import { isDemoAdminMode, isSupabaseConfigured } from '@/lib/supabase/config';
 import { ToastProvider, useToast } from './ToastContext';
 import GlobalSearchModal from './GlobalSearchModal';
 import { DataService } from '@/lib/supabase/data-service';
@@ -83,7 +83,7 @@ function AdminShellContent({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     loadNavData();
 
-    if (isSupabaseConfigured()) {
+    if (isSupabaseConfigured() && !isDemoAdminMode()) {
       const supabase = createClient();
       supabase.auth.getUser().then(({ data }) => {
         if (data.user?.email) setEmail(data.user.email);
@@ -112,7 +112,7 @@ function AdminShellContent({ children }: { children: React.ReactNode }) {
   }, [loadNavData]);
 
   const signOut = async () => {
-    if (isSupabaseConfigured()) {
+    if (isSupabaseConfigured() && !isDemoAdminMode()) {
       try {
         const supabase = createClient();
         await supabase.auth.signOut();
@@ -120,6 +120,8 @@ function AdminShellContent({ children }: { children: React.ReactNode }) {
         console.warn('Sign out error:', e);
       }
     }
+    localStorage.removeItem('zepnex_demo_admin_active');
+    document.cookie = 'zepnex_demo_admin_active=; path=/; max-age=0; SameSite=Lax';
     router.push('/admin/login');
     router.refresh();
   };
