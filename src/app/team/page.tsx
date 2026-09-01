@@ -1,51 +1,23 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Icon from '@/components/ui/AppIcon';
-
-const teamMembers = [
-  {
-    name: 'Aarav Sharma',
-    role: 'Head of Growth',
-    image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=600&q=80',
-    bio: 'Drives acquisition, partnerships, and marketplace scale across India.',
-  },
-  {
-    name: 'Meera Kapoor',
-    role: 'Brand Partnerships Lead',
-    image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=600&q=80',
-    bio: 'Builds relationships with emerging brands and helps them launch faster.',
-  },
-  {
-    name: 'Rohan Verma',
-    role: 'Marketplace Operations',
-    image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=600&q=80',
-    bio: 'Makes sure every order, listing, and delivery flow runs smoothly.',
-  },
-  {
-    name: 'Nisha Sethi',
-    role: 'Customer Experience',
-    image: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=600&q=80',
-    bio: 'Creates a trusted and effortless shopping experience for every customer.',
-  },
-  {
-    name: 'Karan Malhotra',
-    role: 'UI & Experience Designer',
-    image: 'https://images.unsplash.com/photo-1504593811423-6dd665756598?auto=format&fit=crop&w=600&q=80',
-    bio: 'Shapes the aesthetic and product experience across ZEPNEX touchpoints.',
-  },
-  {
-    name: 'Sana Ali',
-    role: 'AI Product Specialist',
-    image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=600&q=80',
-    bio: 'Helps build intelligence features that guide shoppers and sellers better.',
-  },
-];
+import { DataService } from '@/lib/supabase/data-service';
+import type { TeamMemberRow } from '@/types/database';
 
 export default function TeamPage() {
+  const [teamMembers, setTeamMembers] = useState<TeamMemberRow[]>([]);
+
+  useEffect(() => {
+    const load = () => DataService.getTeamMembers().then((members) => setTeamMembers(members.filter((member) => member.published)));
+    load();
+    window.addEventListener('zepnex_catalog_updated', load);
+    return () => window.removeEventListener('zepnex_catalog_updated', load);
+  }, []);
+
   return (
     <main className="bg-background overflow-x-hidden">
       <Header />

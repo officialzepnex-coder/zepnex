@@ -4,6 +4,18 @@ export type ApplicationStatus = 'pending' | 'approved' | 'rejected';
 export type ReviewKind = 'homepage' | 'brand' | 'product';
 export type UserRole = 'user' | 'admin';
 
+export interface TeamMemberRow {
+  id: string;
+  name: string;
+  role: string;
+  image: string;
+  bio: string;
+  sort_order: number;
+  published: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface BrandRow {
   id: string;
   name: string;
@@ -190,6 +202,12 @@ export interface Database {
         Row: SiteSettingRow;
         Insert: Partial<SiteSettingRow> & { key?: string };
         Update: Partial<SiteSettingRow>;
+        Relationships: [];
+      };
+      team_members: {
+        Row: TeamMemberRow;
+        Insert: Partial<TeamMemberRow>;
+        Update: Partial<TeamMemberRow>;
         Relationships: [];
       };
     };

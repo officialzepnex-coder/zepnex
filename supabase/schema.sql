@@ -93,6 +93,7 @@ create table if not exists public.products (
   images text[] default '{}',
   description text not null default '',
   in_stock boolean not null default true,
+  stock_quantity int not null default 0,
   badge text,
   featured boolean not null default false,
   published boolean not null default true,
@@ -151,6 +152,18 @@ create table if not exists public.site_settings (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.team_members (
+  id text primary key default gen_random_uuid()::text,
+  name text not null,
+  role text not null default '',
+  image text not null default '',
+  bio text not null default '',
+  sort_order int not null default 0,
+  published boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 drop trigger if exists brands_updated_at on public.brands;
 create trigger brands_updated_at before update on public.brands
   for each row execute function public.set_updated_at();
@@ -173,6 +186,10 @@ create trigger faqs_updated_at before update on public.faqs
 
 drop trigger if exists site_settings_updated_at on public.site_settings;
 create trigger site_settings_updated_at before update on public.site_settings
+  for each row execute function public.set_updated_at();
+
+drop trigger if exists team_members_updated_at on public.team_members;
+create trigger team_members_updated_at before update on public.team_members
   for each row execute function public.set_updated_at();
 
 -- Keep product.brand_name in sync
@@ -202,6 +219,7 @@ alter table public.reviews enable row level security;
 alter table public.brand_applications enable row level security;
 alter table public.faqs enable row level security;
 alter table public.site_settings enable row level security;
+alter table public.team_members enable row level security;
 
 drop policy if exists "profiles self read" on public.profiles;
 create policy "profiles self read" on public.profiles
@@ -259,6 +277,14 @@ drop policy if exists "applications admin delete" on public.brand_applications;
 create policy "applications admin delete" on public.brand_applications
   for delete using (public.is_admin());
 
+drop policy if exists "team members public read" on public.team_members;
+create policy "team members public read" on public.team_members
+  for select using (published = true or public.is_admin());
+
+drop policy if exists "team members admin write" on public.team_members;
+create policy "team members admin write" on public.team_members
+  for all using (public.is_admin()) with check (public.is_admin());
+
 drop policy if exists "faqs public read" on public.faqs;
 create policy "faqs public read" on public.faqs
   for select using (published = true or public.is_admin());
@@ -294,6 +320,15 @@ create policy "brand assets admin write" on storage.objects
 -- ---------------------------------------------------------------------------
 -- Seed catalog (safe to re-run)
 -- ---------------------------------------------------------------------------
+insert into public.team_members (id, name, role, image, bio, sort_order, published) values
+  ('team-1', 'Aarav Sharma', 'Head of Growth', 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=600&q=80', 'Drives acquisition, partnerships, and marketplace scale across India.', 1, true),
+  ('team-2', 'Meera Kapoor', 'Brand Partnerships Lead', 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=600&q=80', 'Builds relationships with emerging brands and helps them launch faster.', 2, true),
+  ('team-3', 'Rohan Verma', 'Marketplace Operations', 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=600&q=80', 'Makes sure every order, listing, and delivery flow runs smoothly.', 3, true),
+  ('team-4', 'Nisha Sethi', 'Customer Experience', 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=600&q=80', 'Creates a trusted and effortless shopping experience for every customer.', 4, true),
+  ('team-5', 'Karan Malhotra', 'UI & Experience Designer', 'https://images.unsplash.com/photo-1504593811423-6dd665756598?auto=format&fit=crop&w=600&q=80', 'Shapes the aesthetic and product experience across ZEPNEX touchpoints.', 5, true),
+  ('team-6', 'Sana Ali', 'AI Product Specialist', 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=600&q=80', 'Helps build intelligence features that guide shoppers and sellers better.', 6, true)
+on conflict (id) do nothing;
+
 insert into public.categories (id, name, sort_order, published) values
   ('clothing', 'Clothing', 1, true),
   ('daily-use', 'Daily Use', 2, true),

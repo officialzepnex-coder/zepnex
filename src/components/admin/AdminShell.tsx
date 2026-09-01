@@ -24,6 +24,7 @@ import {
   Sparkles,
   Zap,
   Activity,
+  Users,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
@@ -151,6 +152,7 @@ function AdminShellContent({ children }: { children: React.ReactNode }) {
       group: 'STOREFRONT',
       items: [
         { href: '/admin/content', label: 'Homepage Content', icon: PanelsTopLeft },
+        { href: '/admin/team', label: 'Team Members', icon: Users },
       ],
     },
   ];

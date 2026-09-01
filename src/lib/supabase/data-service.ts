@@ -14,6 +14,7 @@ import {
   type FaqRow,
   type HomepageSettings,
   type ActivityLog,
+  type TeamMemberRow,
 } from '@/types/database';
 import { slugify } from '@/lib/mappers';
 
@@ -159,6 +160,15 @@ const INITIAL_APPLICATIONS: ApplicationRow[] = [
   },
 ];
 
+const INITIAL_TEAM_MEMBERS: TeamMemberRow[] = [
+  { id: 'team-1', name: 'Aarav Sharma', role: 'Head of Growth', image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=600&q=80', bio: 'Drives acquisition, partnerships, and marketplace scale across India.', sort_order: 1, published: true, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+  { id: 'team-2', name: 'Meera Kapoor', role: 'Brand Partnerships Lead', image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=600&q=80', bio: 'Builds relationships with emerging brands and helps them launch faster.', sort_order: 2, published: true, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+  { id: 'team-3', name: 'Rohan Verma', role: 'Marketplace Operations', image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=600&q=80', bio: 'Makes sure every order, listing, and delivery flow runs smoothly.', sort_order: 3, published: true, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+  { id: 'team-4', name: 'Nisha Sethi', role: 'Customer Experience', image: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=600&q=80', bio: 'Creates a trusted and effortless shopping experience for every customer.', sort_order: 4, published: true, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+  { id: 'team-5', name: 'Karan Malhotra', role: 'UI & Experience Designer', image: 'https://images.unsplash.com/photo-1504593811423-6dd665756598?auto=format&fit=crop&w=600&q=80', bio: 'Shapes the aesthetic and product experience across ZEPNEX touchpoints.', sort_order: 5, published: true, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+  { id: 'team-6', name: 'Sana Ali', role: 'AI Product Specialist', image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=600&q=80', bio: 'Helps build intelligence features that guide shoppers and sellers better.', sort_order: 6, published: true, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+];
+
 function getInitialBrandRows(): BrandRow[] {
   return initialBrands.map((b) => ({
     id: b.id,
@@ -296,10 +306,11 @@ export class DataService {
       try {
         const supabase = createClient();
         const { data, error } = await supabase.from('brands').select('*').order('name');
-        if (!error && data && data.length > 0) {
+        if (!error && data) {
           setLocal('brands', data as BrandRow[]);
           return data as BrandRow[];
         }
+        if (error) console.warn('Falling back to local brands:', error.message);
       } catch (e) {
         console.warn('Falling back to local brands:', e);
       }
@@ -344,13 +355,11 @@ export class DataService {
         const supabase = createClient();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data, error } = await (supabase.from('brands') as any).upsert(payload).select('*').single();
-        if (!error && data) {
-          saved = data as BrandRow;
-        } else {
-          saved = payload;
-        }
-      } catch {
-        saved = payload;
+        if (error) throw new Error(`Brand save failed: ${error.message}`);
+        if (!data) throw new Error('Brand save failed: Supabase returned no record.');
+        saved = data as BrandRow;
+      } catch (error) {
+        throw error instanceof Error ? error : new Error('Brand save failed.');
       }
     } else {
       saved = payload;
@@ -372,9 +381,10 @@ export class DataService {
     if (isSupabaseConfigured()) {
       try {
         const supabase = createClient();
-        await supabase.from('brands').delete().eq('id', id);
-      } catch (e) {
-        console.warn('Supabase delete brand failed:', e);
+        const { error } = await supabase.from('brands').delete().eq('id', id);
+        if (error) throw new Error(`Brand delete failed: ${error.message}`);
+      } catch (error) {
+        throw error instanceof Error ? error : new Error('Brand delete failed.');
       }
     }
 
@@ -390,10 +400,11 @@ export class DataService {
       try {
         const supabase = createClient();
         const { data, error } = await supabase.from('products').select('*').order('name');
-        if (!error && data && data.length > 0) {
+        if (!error && data) {
           setLocal('products', data as ProductRow[]);
           return data as ProductRow[];
         }
+        if (error) console.warn('Falling back to local products:', error.message);
       } catch (e) {
         console.warn('Falling back to local products:', e);
       }
@@ -443,13 +454,11 @@ export class DataService {
         const supabase = createClient();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data, error } = await (supabase.from('products') as any).upsert(payload).select('*').single();
-        if (!error && data) {
-          saved = data as ProductRow;
-        } else {
-          saved = payload;
-        }
-      } catch {
-        saved = payload;
+        if (error) throw new Error(`Product save failed: ${error.message}`);
+        if (!data) throw new Error('Product save failed: Supabase returned no record.');
+        saved = data as ProductRow;
+      } catch (error) {
+        throw error instanceof Error ? error : new Error('Product save failed.');
       }
     } else {
       saved = payload;
@@ -526,10 +535,11 @@ export class DataService {
       try {
         const supabase = createClient();
         const { data, error } = await supabase.from('categories').select('*').order('sort_order');
-        if (!error && data && data.length > 0) {
+        if (!error && data) {
           setLocal('categories', data as CategoryRow[]);
           return data as CategoryRow[];
         }
+        if (error) console.warn('Falling back to local categories:', error.message);
       } catch (e) {
         console.warn('Falling back to local categories:', e);
       }
@@ -590,10 +600,11 @@ export class DataService {
       try {
         const supabase = createClient();
         const { data, error } = await supabase.from('reviews').select('*').order('created_at', { ascending: false });
-        if (!error && data && data.length > 0) {
+        if (!error && data) {
           setLocal('reviews', data as ReviewRow[]);
           return data as ReviewRow[];
         }
+        if (error) console.warn('Falling back to local reviews:', error.message);
       } catch (e) {
         console.warn('Falling back to local reviews:', e);
       }
@@ -663,10 +674,11 @@ export class DataService {
       try {
         const supabase = createClient();
         const { data, error } = await supabase.from('brand_applications').select('*').order('created_at', { ascending: false });
-        if (!error && data && data.length > 0) {
+        if (!error && data) {
           setLocal('brand_applications', data as ApplicationRow[]);
           return data as ApplicationRow[];
         }
+        if (error) console.warn('Falling back to local applications:', error.message);
       } catch (e) {
         console.warn('Falling back to local applications:', e);
       }
@@ -759,10 +771,11 @@ export class DataService {
       try {
         const supabase = createClient();
         const { data, error } = await supabase.from('faqs').select('*').order('sort_order');
-        if (!error && data && data.length > 0) {
+        if (!error && data) {
           setLocal('faqs', data as FaqRow[]);
           return data as FaqRow[];
         }
+        if (error) console.warn('Falling back to local faqs:', error.message);
       } catch (e) {
         console.warn('Falling back to local faqs:', e);
       }
@@ -823,6 +836,61 @@ export class DataService {
     return true;
   }
 
+  // TEAM MEMBERS
+  public static async getTeamMembers(): Promise<TeamMemberRow[]> {
+    if (isSupabaseConfigured()) {
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase.from('team_members').select('*').order('sort_order');
+        if (!error && data) {
+          setLocal('team_members', data as TeamMemberRow[]);
+          return data as TeamMemberRow[];
+        }
+      } catch (e) {
+        console.warn('Falling back to local team members:', e);
+      }
+    }
+    return getLocal<TeamMemberRow[]>('team_members', INITIAL_TEAM_MEMBERS);
+  }
+
+  public static async saveTeamMember(member: Partial<TeamMemberRow>): Promise<TeamMemberRow> {
+    const isNew = !member.id;
+    const id = member.id || `team-${Date.now()}`;
+    const now = new Date().toISOString();
+    const current = await this.getTeamMembers();
+    const payload: TeamMemberRow = {
+      id,
+      name: member.name?.trim() || 'Team Member',
+      role: member.role?.trim() || 'Team Member',
+      image: member.image?.trim() || 'https://api.dicebear.com/7.x/initials/svg?seed=Team',
+      bio: member.bio?.trim() || '',
+      sort_order: member.sort_order ?? current.length + 1,
+      published: member.published ?? true,
+      created_at: member.created_at || now,
+      updated_at: now,
+    };
+    if (isSupabaseConfigured()) {
+      const supabase = createClient();
+      const { error } = await (supabase.from('team_members') as any).upsert(payload);
+      if (error) throw new Error(`Team member save failed: ${error.message}`);
+    }
+    const updated = current.some((item) => item.id === id) ? current.map((item) => (item.id === id ? payload : item)) : [...current, payload];
+    setLocal('team_members', updated);
+    this.addLog(isNew ? 'create' : 'update', 'setting', `${isNew ? 'Added' : 'Updated'} team member "${payload.name}"`, undefined, id);
+    return payload;
+  }
+
+  public static async deleteTeamMember(id: string): Promise<boolean> {
+    if (isSupabaseConfigured()) {
+      const supabase = createClient();
+      const { error } = await supabase.from('team_members').delete().eq('id', id);
+      if (error) throw new Error(`Team member delete failed: ${error.message}`);
+    }
+    setLocal('team_members', (await this.getTeamMembers()).filter((item) => item.id !== id));
+    this.addLog('delete', 'setting', `Deleted team member "${id}"`, undefined, id);
+    return true;
+  }
+
   // SITE SETTINGS & HOMEPAGE
   public static async getHomepageSettings(): Promise<HomepageSettings> {
     if (isSupabaseConfigured()) {
@@ -874,6 +942,7 @@ export class DataService {
       localStorage.removeItem(LOCAL_STORAGE_KEY_PREFIX + 'brand_applications');
       localStorage.removeItem(LOCAL_STORAGE_KEY_PREFIX + 'faqs');
       localStorage.removeItem(LOCAL_STORAGE_KEY_PREFIX + 'homepage_settings');
+      localStorage.removeItem(LOCAL_STORAGE_KEY_PREFIX + 'team_members');
       localStorage.removeItem(LOCAL_STORAGE_KEY_PREFIX + 'activity_logs');
       window.dispatchEvent(new CustomEvent('zepnex_catalog_updated', { detail: { reset: true } }));
     } catch (e) {
