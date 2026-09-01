@@ -105,7 +105,8 @@ create table if not exists public.categories (
   id text primary key,
   name text not null unique,
   sort_order int not null default 0,
-  published boolean not null default true
+  published boolean not null default true,
+  icon text not null default 'Folder'
 );
 
 create table if not exists public.reviews (
@@ -140,6 +141,7 @@ create table if not exists public.faqs (
   id text primary key default gen_random_uuid()::text,
   question text not null,
   answer text not null,
+  category text not null default 'General',
   sort_order int not null default 0,
   published boolean not null default true,
   created_at timestamptz not null default now(),
@@ -163,6 +165,20 @@ create table if not exists public.team_members (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.categories add column if not exists icon text not null default 'Folder';
+alter table public.faqs add column if not exists category text not null default 'General';
+
+create index if not exists brands_published_name_idx on public.brands (published, name);
+create index if not exists products_published_name_idx on public.products (published, name);
+create index if not exists products_published_category_idx on public.products (published, category);
+create index if not exists categories_published_sort_idx on public.categories (published, sort_order);
+create index if not exists reviews_published_created_idx on public.reviews (published, created_at desc);
+create index if not exists reviews_published_kind_idx on public.reviews (published, kind);
+create index if not exists faqs_published_sort_idx on public.faqs (published, sort_order);
+create index if not exists team_members_published_sort_idx on public.team_members (published, sort_order);
+create index if not exists applications_status_created_idx on public.brand_applications (status, created_at desc);
+create index if not exists profiles_role_idx on public.profiles (role);
 
 drop trigger if exists brands_updated_at on public.brands;
 create trigger brands_updated_at before update on public.brands

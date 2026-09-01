@@ -56,38 +56,32 @@ export function CatalogProvider({ children }: { children: React.ReactNode }) {
     usingFallback: !isSupabaseConfigured(),
   });
 
+  const applyCatalogData = useCallback((data: Awaited<ReturnType<typeof DataService.getPublicCatalog>>, loading: boolean) => {
+    const { brandRows, productRows, categoryRows, reviewRows, faqRows, homepageSettings } = data;
+    const publishedCats = categoryRows.map((c) => c.name);
+
+    setState({
+      brands: brandRows.length > 0 ? brandRows.map(mapBrand) : staticBrands,
+      products: productRows.length > 0 ? productRows.map(mapProduct) : staticProducts,
+      categories: publishedCats.length > 0 ? publishedCats : DEFAULT_CATEGORIES,
+      testimonials: reviewRows.filter((r) => r.kind === 'homepage'),
+      reviews: reviewRows,
+      faqs: faqRows,
+      homepage: homepageSettings || DEFAULT_HOMEPAGE,
+      loading,
+      usingFallback: !isSupabaseConfigured(),
+    });
+  }, []);
+
   const loadData = useCallback(async () => {
     try {
-      const [brandRows, prodRows, catRows, revRows, faqRows, homeSettings] = await Promise.all([
-        DataService.getBrands(),
-        DataService.getProducts(),
-        DataService.getCategories(),
-        DataService.getReviews(),
-        DataService.getFaqs(),
-        DataService.getHomepageSettings(),
-      ]);
-
-      const publishedBrands = brandRows.filter((b) => b.published !== false);
-      const publishedProducts = prodRows.filter((p) => p.published !== false);
-      const publishedCats = catRows.filter((c) => c.published !== false).map((c) => c.name);
-      const publishedReviews = revRows.filter((r) => r.published !== false);
-      const publishedFaqs = faqRows.filter((f) => f.published !== false);
-
-      setState({
-        brands: publishedBrands.length > 0 ? publishedBrands.map(mapBrand) : staticBrands,
-        products: publishedProducts.length > 0 ? publishedProducts.map(mapProduct) : staticProducts,
-        categories: publishedCats.length > 0 ? publishedCats : DEFAULT_CATEGORIES,
-        testimonials: publishedReviews.filter((r) => r.kind === 'homepage'),
-        reviews: publishedReviews,
-        faqs: publishedFaqs,
-        homepage: homeSettings || DEFAULT_HOMEPAGE,
-        loading: false,
-        usingFallback: !isSupabaseConfigured(),
-      });
+      applyCatalogData(DataService.getCachedPublicCatalog(), true);
+      const catalog = await DataService.getPublicCatalog();
+      applyCatalogData(catalog, false);
     } catch {
       setState((prev) => ({ ...prev, loading: false, usingFallback: true }));
     }
-  }, []);
+  }, [applyCatalogData]);
 
   useEffect(() => {
     loadData();

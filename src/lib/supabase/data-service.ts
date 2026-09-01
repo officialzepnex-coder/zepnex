@@ -240,6 +240,89 @@ function setLocal<T>(key: string, value: T): void {
 
 // Data Service Singleton
 export class DataService {
+  public static getCachedPublicCatalog() {
+    const brandRows = getLocal<BrandRow[]>('brands', getInitialBrandRows()).filter((b) => b.published !== false);
+    const productRows = getLocal<ProductRow[]>('products', getInitialProductRows()).filter((p) => p.published !== false);
+    const categoryRows = getLocal<CategoryRow[]>('categories', INITIAL_CATEGORIES).filter((c) => c.published !== false);
+    const reviewRows = getLocal<ReviewRow[]>('reviews', INITIAL_REVIEWS).filter((r) => r.published !== false);
+    const faqRows = getLocal<FaqRow[]>('faqs', INITIAL_FAQS).filter((f) => f.published !== false);
+
+    return {
+      brandRows,
+      productRows,
+      categoryRows,
+      reviewRows,
+      faqRows,
+      homepageSettings: getLocal<HomepageSettings>('homepage_settings', DEFAULT_HOMEPAGE),
+    };
+  }
+
+  public static async getPublicCatalog() {
+    if (!isSupabaseConfigured()) {
+      return this.getCachedPublicCatalog();
+    }
+
+    try {
+      const supabase = createClient();
+      const [brandsResult, productsResult, categoriesResult, reviewsResult, faqsResult, homepageResult] = await Promise.all([
+        supabase
+          .from('brands')
+          .select('id,name,tagline,logo,cover_image,location,rating,reviews,followers,product_count,description,verified,website,contact_email,featured,published,created_at,updated_at')
+          .eq('published', true)
+          .order('name'),
+        supabase
+          .from('products')
+          .select('id,name,brand_id,brand_name,category,price,original_price,rating,reviews,image,images,description,in_stock,stock_quantity,badge,featured,published,created_at,updated_at')
+          .eq('published', true)
+          .order('name'),
+        supabase
+          .from('categories')
+          .select('id,name,sort_order,published,icon')
+          .eq('published', true)
+          .order('sort_order'),
+        supabase
+          .from('reviews')
+          .select('id,kind,brand_id,product_id,author,role,rating,comment,avatar,published,created_at,updated_at')
+          .eq('published', true)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('faqs')
+          .select('id,question,answer,category,sort_order,published,created_at,updated_at')
+          .eq('published', true)
+          .order('sort_order'),
+        supabase.from('site_settings').select('key,value,updated_at').eq('key', 'homepage').maybeSingle(),
+      ]);
+
+      const results = [brandsResult, productsResult, categoriesResult, reviewsResult, faqsResult, homepageResult];
+      const failed = results.find((result) => result.error);
+      if (failed?.error) {
+        console.warn('Falling back to cached public catalog:', failed.error.message);
+        return this.getCachedPublicCatalog();
+      }
+
+      const brandRows = (brandsResult.data || []) as BrandRow[];
+      const productRows = (productsResult.data || []) as ProductRow[];
+      const categoryRows = (categoriesResult.data || []) as CategoryRow[];
+      const reviewRows = (reviewsResult.data || []) as ReviewRow[];
+      const faqRows = (faqsResult.data || []) as FaqRow[];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const rawHomepage = (homepageResult.data as any)?.value;
+      const homepageSettings = rawHomepage ? { ...DEFAULT_HOMEPAGE, ...(rawHomepage as object) } : DEFAULT_HOMEPAGE;
+
+      setLocal('brands', brandRows);
+      setLocal('products', productRows);
+      setLocal('categories', categoryRows);
+      setLocal('reviews', reviewRows);
+      setLocal('faqs', faqRows);
+      setLocal('homepage_settings', homepageSettings);
+
+      return { brandRows, productRows, categoryRows, reviewRows, faqRows, homepageSettings };
+    } catch (error) {
+      console.warn('Falling back to cached public catalog:', error);
+      return this.getCachedPublicCatalog();
+    }
+  }
+
   public static async checkConnection(): Promise<{ ok: boolean; message: string; isFallback: boolean }> {
     if (!isSupabaseConfigured()) {
       return {
