@@ -6,21 +6,21 @@ export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isAdminPath = pathname.startsWith('/admin');
   const isLogin = pathname.startsWith('/admin/login');
-  const isSecurity = pathname.startsWith('/admin/security');
 
   if (!isAdminPath) {
     return NextResponse.next({ request });
   }
 
-  // Allow access to login page
+  // Allow access to login page always
   if (isLogin) {
     return NextResponse.next({ request });
   }
 
+  // If Supabase is not configured, block access and redirect to login with an error flag
   if (!isSupabaseConfigured()) {
     const url = request.nextUrl.clone();
     url.pathname = '/admin/login';
-    url.searchParams.set('error', 'supabase_required');
+    url.searchParams.set('error', 'not_configured');
     return NextResponse.redirect(url);
   }
 
@@ -53,39 +53,41 @@ export async function updateSession(request: NextRequest) {
 
     if (error) throw error;
 
-    if (!user && !isLogin) {
-      // If genuine Supabase project is connected and user not logged in, redirect to login
+    if (!user) {
+      // Not authenticated — redirect to login
       const url = request.nextUrl.clone();
       url.pathname = '/admin/login';
       return NextResponse.redirect(url);
     }
 
-    if (user) {
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .maybeSingle();
+    // Verify the user has an admin or manager role in the profiles table
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle();
 
-      if (profileError || !profile || !['admin', 'manager'].includes(profile.role)) {
+    if (profileError || !profile || !['admin', 'manager'].includes(profile.role)) {
+      await supabase.auth.signOut();
+      const url = request.nextUrl.clone();
+      url.pathname = '/admin/login';
+      url.searchParams.set('error', 'admin_required');
+      return NextResponse.redirect(url);
+    }
+
+    // For admin role, enforce MFA (aal2)
+    if (profile.role === 'admin') {
+      const { data: assurance } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (assurance?.currentLevel !== 'aal2') {
         const url = request.nextUrl.clone();
         url.pathname = '/admin/login';
-        url.searchParams.set('error', 'admin_required');
+        url.searchParams.set('error', 'mfa_required');
         return NextResponse.redirect(url);
-      }
-
-      if (profile.role === 'admin') {
-        const { data: assurance } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-        if (assurance?.currentLevel !== 'aal2' && !isSecurity) {
-          const url = request.nextUrl.clone();
-          url.pathname = '/admin/login';
-          url.searchParams.set('error', 'mfa_required');
-          return NextResponse.redirect(url);
-        }
       }
     }
 
-    if (user && isLogin) {
+    // Already authenticated user visiting login → redirect to dashboard
+    if (isLogin) {
       const url = request.nextUrl.clone();
       url.pathname = '/admin';
       return NextResponse.redirect(url);

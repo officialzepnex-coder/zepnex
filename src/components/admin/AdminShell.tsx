@@ -21,11 +21,12 @@ import {
   Menu,
   X,
   ChevronDown,
-  Sparkles,
-  Zap,
   Activity,
   Users,
   LockKeyhole,
+  Settings2,
+  FileText,
+  ShieldAlert,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
@@ -42,6 +43,7 @@ interface NavGroup {
     icon: React.ElementType;
     badge?: number | string;
     isSync?: boolean;
+    isDanger?: boolean;
   }[];
 }
 
@@ -51,6 +53,7 @@ function AdminShellContent({ children }: { children: React.ReactNode }) {
   const { info } = useToast();
 
   const [email, setEmail] = useState('');
+  const [role, setRole] = useState('Administrator');
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
@@ -64,7 +67,7 @@ function AdminShellContent({ children }: { children: React.ReactNode }) {
   }>({
     ok: true,
     isFallback: !isSupabaseConfigured(),
-    message: isSupabaseConfigured() ? 'Checking Supabase...' : 'Local Cache Mode',
+    message: isSupabaseConfigured() ? 'Checking Supabase...' : 'Not configured',
   });
 
   const loadNavData = React.useCallback(async () => {
@@ -84,14 +87,31 @@ function AdminShellContent({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     loadNavData();
 
+    // Always attempt to get the real Supabase user — no demo fallback
     if (isSupabaseConfigured()) {
       const supabase = createClient();
       supabase.auth.getUser().then(({ data }) => {
-        if (data.user?.email) setEmail(data.user.email);
-        else setEmail('admin@zepnex.com');
-      }).catch(() => setEmail('admin@zepnex.com'));
-    } else {
-      setEmail('');
+        if (data.user?.email) {
+          setEmail(data.user.email);
+        }
+      }).catch(() => {});
+
+      supabase
+        .from('profiles')
+        .select('role, email')
+        .limit(1)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (data?.role) {
+            const roleMap: Record<string, string> = {
+              admin: 'Super Admin',
+              manager: 'Manager',
+              customer: 'Customer',
+            };
+            setRole(roleMap[data.role] || 'Administrator');
+          }
+        })
+        .catch(() => {});
     }
 
     const handleUpdate = () => loadNavData();
@@ -154,9 +174,15 @@ function AdminShellContent({ children }: { children: React.ReactNode }) {
       items: [
         { href: '/admin/content', label: 'Homepage Content', icon: PanelsTopLeft },
         { href: '/admin/team', label: 'Team Members', icon: Users },
+      ],
+    },
+    {
+      group: 'SYSTEM',
+      items: [
         { href: '/admin/users', label: 'Users & Roles', icon: Users },
-        { href: '/admin/security', label: 'Security & MFA', icon: LockKeyhole },
-        { href: '/admin/logs', label: 'Audit Logs', icon: Activity },
+        { href: '/admin/settings', label: 'Site Settings', icon: Settings2 },
+        { href: '/admin/security', label: 'Security', icon: LockKeyhole },
+        { href: '/admin/logs', label: 'Audit Logs', icon: FileText },
       ],
     },
   ];
@@ -183,13 +209,13 @@ function AdminShellContent({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Sidebar Nav Items */}
-        <nav className="flex-1 px-3 py-4 space-y-6 overflow-y-auto custom-scrollbar">
+        <nav className="flex-1 px-3 py-4 space-y-5 overflow-y-auto custom-scrollbar">
           {navGroups.map((group) => (
             <div key={group.group}>
               <p className="px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-white/40 mb-2">
                 {group.group}
               </p>
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 {group.items.map((item) => {
                   const active = item.href === '/admin' ? pathname === '/admin' : pathname.startsWith(item.href);
                   const Icon = item.icon;
@@ -200,11 +226,13 @@ function AdminShellContent({ children }: { children: React.ReactNode }) {
                       className={`flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-all group ${
                         active
                           ? 'bg-primary text-white shadow-sm shadow-primary/20'
+                          : item.isDanger
+                          ? 'text-red-400/80 hover:bg-red-500/10 hover:text-red-400'
                           : 'text-white/70 hover:bg-white/5 hover:text-white'
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <Icon className={`w-4 h-4 transition-transform group-hover:scale-110 ${active ? 'text-white' : item.isSync ? 'text-amber-400' : 'text-white/60'}`} />
+                        <Icon className={`w-4 h-4 transition-transform group-hover:scale-110 ${active ? 'text-white' : item.isSync ? 'text-amber-400' : item.isDanger ? 'text-red-400/80' : 'text-white/60'}`} />
                         <span>{item.label}</span>
                       </div>
                       {item.badge !== undefined && (
@@ -237,10 +265,10 @@ function AdminShellContent({ children }: { children: React.ReactNode }) {
                 connectionStatus.ok && !connectionStatus.isFallback ? 'bg-emerald-400' : 'bg-amber-400'
               }`} />
               <span className="font-medium truncate max-w-[140px]">
-                {connectionStatus.ok && !connectionStatus.isFallback ? 'Supabase Live' : 'Supabase Not Connected'}
+                {connectionStatus.ok && !connectionStatus.isFallback ? 'Supabase Live' : 'Offline / Local'}
               </span>
             </div>
-            <Zap className="w-3.5 h-3.5 text-amber-400" />
+            <Database className="w-3.5 h-3.5 opacity-60" />
           </Link>
 
           <div className="flex items-center justify-between pt-1">
@@ -319,46 +347,28 @@ function AdminShellContent({ children }: { children: React.ReactNode }) {
                 {quickAddOpen && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setQuickAddOpen(false)} />
-                    <div className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-md shadow-xl py-1 z-50 animate-fade-in text-sm">
-                      <Link
-                        href="/admin/products/new"
-                        onClick={() => setQuickAddOpen(false)}
-                        className="flex items-center gap-2.5 px-3.5 py-2 hover:bg-secondary text-foreground"
-                      >
-                        <Package className="w-4 h-4 text-primary" />
-                        <span>Add Product</span>
+                    <div className="absolute right-0 mt-2 w-52 bg-card border border-border rounded-md shadow-xl py-1 z-50 animate-fade-in text-sm">
+                      <p className="px-3.5 py-1.5 text-[10px] uppercase tracking-widest font-bold text-muted-foreground">
+                        Quick Create
+                      </p>
+                      <Link href="/admin/products/new" onClick={() => setQuickAddOpen(false)} className="flex items-center gap-2.5 px-3.5 py-2 hover:bg-secondary text-foreground">
+                        <Package className="w-4 h-4 text-primary" /><span>New Product</span>
                       </Link>
-                      <Link
-                        href="/admin/brands/new"
-                        onClick={() => setQuickAddOpen(false)}
-                        className="flex items-center gap-2.5 px-3.5 py-2 hover:bg-secondary text-foreground"
-                      >
-                        <Store className="w-4 h-4 text-primary" />
-                        <span>Add Brand</span>
+                      <Link href="/admin/brands/new" onClick={() => setQuickAddOpen(false)} className="flex items-center gap-2.5 px-3.5 py-2 hover:bg-secondary text-foreground">
+                        <Store className="w-4 h-4 text-primary" /><span>New Brand</span>
                       </Link>
-                      <Link
-                        href="/admin/categories"
-                        onClick={() => setQuickAddOpen(false)}
-                        className="flex items-center gap-2.5 px-3.5 py-2 hover:bg-secondary text-foreground"
-                      >
-                        <Tags className="w-4 h-4 text-primary" />
-                        <span>Add Category</span>
+                      <Link href="/admin/categories" onClick={() => setQuickAddOpen(false)} className="flex items-center gap-2.5 px-3.5 py-2 hover:bg-secondary text-foreground">
+                        <Tags className="w-4 h-4 text-primary" /><span>New Category</span>
                       </Link>
-                      <Link
-                        href="/admin/faqs"
-                        onClick={() => setQuickAddOpen(false)}
-                        className="flex items-center gap-2.5 px-3.5 py-2 hover:bg-secondary text-foreground"
-                      >
-                        <HelpCircle className="w-4 h-4 text-primary" />
-                        <span>Add FAQ</span>
+                      <Link href="/admin/faqs" onClick={() => setQuickAddOpen(false)} className="flex items-center gap-2.5 px-3.5 py-2 hover:bg-secondary text-foreground">
+                        <HelpCircle className="w-4 h-4 text-primary" /><span>New FAQ</span>
                       </Link>
-                      <Link
-                        href="/admin/reviews"
-                        onClick={() => setQuickAddOpen(false)}
-                        className="flex items-center gap-2.5 px-3.5 py-2 hover:bg-secondary text-foreground"
-                      >
-                        <Sparkles className="w-4 h-4 text-primary" />
-                        <span>Add Review</span>
+                      <div className="border-t border-border my-1" />
+                      <Link href="/admin/users" onClick={() => setQuickAddOpen(false)} className="flex items-center gap-2.5 px-3.5 py-2 hover:bg-secondary text-foreground">
+                        <Users className="w-4 h-4 text-primary" /><span>Manage Users</span>
+                      </Link>
+                      <Link href="/admin/settings" onClick={() => setQuickAddOpen(false)} className="flex items-center gap-2.5 px-3.5 py-2 hover:bg-secondary text-foreground">
+                        <Settings2 className="w-4 h-4 text-primary" /><span>Site Settings</span>
                       </Link>
                     </div>
                   </>
@@ -387,7 +397,9 @@ function AdminShellContent({ children }: { children: React.ReactNode }) {
                           <Activity className="w-4 h-4 text-primary" />
                           <span className="font-semibold text-xs uppercase tracking-wider">Recent Activity</span>
                         </div>
-                        <span className="text-[10px] text-muted-foreground">{logs.length} events</span>
+                        <Link href="/admin/logs" onClick={() => setNotificationsOpen(false)} className="text-[10px] text-primary hover:underline">
+                          View all logs
+                        </Link>
                       </div>
                       <div className="max-h-72 overflow-y-auto divide-y divide-border">
                         {logs.length === 0 ? (
@@ -409,14 +421,21 @@ function AdminShellContent({ children }: { children: React.ReactNode }) {
                 )}
               </div>
 
+              {/* Security Alert Icon — if Supabase not configured */}
+              {!isSupabaseConfigured() && (
+                <Link href="/admin/security" className="p-2 rounded-md bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 transition-colors" title="Security: Supabase not configured">
+                  <ShieldAlert className="w-4 h-4" />
+                </Link>
+              )}
+
               {/* User Avatar Info */}
               <div className="hidden md:flex items-center gap-2.5 pl-2 border-l border-border">
                 <div className="w-8 h-8 rounded-full bg-primary/20 text-primary border border-primary/30 flex items-center justify-center font-bold text-xs">
                   {email ? email[0].toUpperCase() : 'A'}
                 </div>
                 <div className="text-left leading-tight hidden xl:block">
-                  <p className="text-xs font-semibold truncate max-w-[120px]">{email}</p>
-                  <span className="text-[10px] text-muted-foreground">Administrator</span>
+                  <p className="text-xs font-semibold truncate max-w-[120px]">{email || 'Admin'}</p>
+                  <span className="text-[10px] text-muted-foreground">{role}</span>
                 </div>
               </div>
             </div>
@@ -430,9 +449,7 @@ function AdminShellContent({ children }: { children: React.ReactNode }) {
             <div className="fixed inset-y-0 left-0 w-72 bg-[#14120E] text-white p-5 flex flex-col shadow-2xl animate-slide-in-left">
               <div className="flex items-center justify-between pb-4 border-b border-white/10">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded bg-primary flex items-center justify-center font-display font-bold text-white">
-                    Z
-                  </div>
+                  <div className="w-7 h-7 rounded bg-primary flex items-center justify-center font-display font-bold text-white">Z</div>
                   <span className="font-display font-bold text-lg">ZEPNEX Admin</span>
                 </div>
                 <button onClick={() => setMobileMenuOpen(false)} className="text-white/60 hover:text-white">
@@ -446,7 +463,7 @@ function AdminShellContent({ children }: { children: React.ReactNode }) {
                     <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40 mb-1.5 px-2">
                       {group.group}
                     </p>
-                    <div className="space-y-1">
+                    <div className="space-y-0.5">
                       {group.items.map((item) => {
                         const active = item.href === '/admin' ? pathname === '/admin' : pathname.startsWith(item.href);
                         const Icon = item.icon;
@@ -477,6 +494,7 @@ function AdminShellContent({ children }: { children: React.ReactNode }) {
               </nav>
 
               <div className="pt-4 border-t border-white/10 space-y-2 text-xs">
+                <div className="px-2 py-1 text-white/40 text-[10px]">{email}</div>
                 <Link href="/" target="_blank" className="flex items-center gap-2 text-white/70 hover:text-white">
                   <ExternalLink className="w-4 h-4" /> View Storefront
                 </Link>

@@ -1,30 +1,44 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   Lock,
+  ArrowRight,
   ExternalLink,
+  ShieldCheck,
+  AlertCircle,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { createClient } from '@/lib/supabase/client';
 
 export default function AdminLoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const configured = isSupabaseConfigured();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+
+  // MFA step state (kept for real Supabase MFA flow)
   const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
   const [mfaChallengeId, setMfaChallengeId] = useState<string | null>(null);
   const [mfaCode, setMfaCode] = useState('');
-  const [mfaRequired, setMfaRequired] = useState(false);
 
-  React.useEffect(() => {
-    setMfaRequired(new URLSearchParams(window.location.search).get('error') === 'mfa_required');
-  }, []);
+  // Error banner from middleware redirect params
+  const urlError = searchParams.get('error');
+  const urlErrorMessages: Record<string, string> = {
+    mfa_required: 'Authenticator (MFA) verification is required for this admin account.',
+    admin_required: 'Access denied — this account does not have admin or manager privileges.',
+    auth_failed: 'Authentication check failed. Please sign in again.',
+    not_configured: 'Supabase is not configured. Contact your system administrator.',
+  };
 
   const verifyMfa = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,29 +46,33 @@ export default function AdminLoginPage() {
     setBusy(true);
     try {
       const supabase = createClient();
-      const { error: verifyError } = await supabase.auth.mfa.verify({ factorId: mfaFactorId, challengeId: mfaChallengeId, code: mfaCode });
+      const { error: verifyError } = await supabase.auth.mfa.verify({
+        factorId: mfaFactorId,
+        challengeId: mfaChallengeId,
+        code: mfaCode,
+      });
       if (verifyError) throw verifyError;
       router.push('/admin');
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Invalid authenticator code');
+      setError(err instanceof Error ? err.message : 'Invalid authenticator code.');
     } finally {
       setBusy(false);
     }
   };
 
-  const handleSupabaseLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!configured) return;
+    if (!configured) {
+      setError('Supabase is not configured. Add your project credentials to .env.local first.');
+      return;
+    }
     setBusy(true);
     setError('');
 
     try {
       const supabase = createClient();
-      const { data, error: signError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { data, error: signError } = await supabase.auth.signInWithPassword({ email, password });
       if (signError) throw signError;
 
       const { data: profile, error: profileError } = await supabase
@@ -66,20 +84,25 @@ export default function AdminLoginPage() {
       if (profileError) throw profileError;
       if (!profile || !['admin', 'manager'].includes((profile as { role?: string }).role || '')) {
         await supabase.auth.signOut();
-        throw new Error('This Supabase user is not an admin yet. Run: update public.profiles set role = \'admin\' where email = \'your-email@example.com\';');
+        throw new Error(
+          'This account does not have admin or manager access. Ask a super-admin to update your role.'
+        );
       }
 
+      // MFA step for admins
       if ((profile as { role?: string }).role === 'admin') {
         const { data: assurance } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
         if (assurance?.currentLevel !== 'aal2') {
           const { data: factors } = await supabase.auth.mfa.listFactors();
           const factor = factors?.totp?.find((entry) => entry.status === 'verified');
           if (!factor) {
-            router.push('/admin/security');
-            router.refresh();
-            return;
+            throw new Error(
+              'MFA is required for admin accounts. Enroll an authenticator app in Supabase before signing in.'
+            );
           }
-          const { data: challenge, error: challengeError } = await supabase.auth.mfa.challenge({ factorId: factor.id });
+          const { data: challenge, error: challengeError } = await supabase.auth.mfa.challenge({
+            factorId: factor.id,
+          });
           if (challengeError) throw challengeError;
           setMfaFactorId(factor.id);
           setMfaChallengeId(challenge.id);
@@ -88,10 +111,15 @@ export default function AdminLoginPage() {
         }
       }
 
+      // Store last login time
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('zepnex_last_login', new Date().toISOString());
+      }
+
       router.push('/admin');
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not sign in');
+      setError(err instanceof Error ? err.message : 'Could not sign in. Check your credentials.');
     } finally {
       setBusy(false);
     }
@@ -107,7 +135,9 @@ export default function AdminLoginPage() {
           </div>
           <div>
             <span className="font-display font-bold text-lg tracking-wider text-white">ZEPNEX</span>
-            <span className="block text-[9px] uppercase tracking-[0.2em] text-primary font-semibold">Admin Suite</span>
+            <span className="block text-[9px] uppercase tracking-[0.2em] text-primary font-semibold">
+              Admin Suite
+            </span>
           </div>
         </Link>
 
@@ -127,71 +157,166 @@ export default function AdminLoginPage() {
           <span className="text-[10px] uppercase font-bold tracking-[0.3em] text-primary px-2.5 py-1 rounded bg-primary/10 border border-primary/20 inline-block">
             Marketplace Control Center
           </span>
-          <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-tight text-white">Admin Access</h1>
+          <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-tight text-white">
+            Admin Access
+          </h1>
           <p className="text-xs text-white/60">
-            Sign in to manage products, partner brands, categories, reviews, and Supabase data synchronization.
+            Sign in to manage products, partner brands, categories, reviews, and platform settings.
           </p>
         </div>
 
-        <div className="bg-[#1C1A16] border border-white/10 p-6 sm:p-8 rounded-lg shadow-2xl space-y-6 backdrop-blur-md">
-          <div className="relative flex items-center justify-center">
-            <div className="border-t border-white/10 w-full" />
-            <span className="bg-[#1C1A16] px-3 text-[10px] uppercase tracking-widest text-white/40 font-mono">
-              Sign in with Supabase Auth
-            </span>
+        {/* Not Configured Banner */}
+        {!configured && (
+          <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-md flex items-start gap-3">
+            <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-xs font-semibold text-amber-300">Supabase Not Configured</p>
+              <p className="text-xs text-amber-300/80 mt-0.5">
+                Add <code className="font-mono bg-amber-500/20 px-1 rounded">NEXT_PUBLIC_SUPABASE_URL</code> and{' '}
+                <code className="font-mono bg-amber-500/20 px-1 rounded">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> to your{' '}
+                <code className="font-mono bg-amber-500/20 px-1 rounded">.env.local</code> to enable admin access.
+              </p>
+            </div>
           </div>
+        )}
 
-          {mfaRequired && <div className="p-3 rounded bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300">Authenticator verification is required for this admin account.</div>}
+        {/* URL Error Banner (from middleware redirects) */}
+        {urlError && urlErrorMessages[urlError] && (
+          <div className="p-3 rounded bg-red-500/10 border border-red-500/30 text-xs text-red-400 flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>{urlErrorMessages[urlError]}</span>
+          </div>
+        )}
 
-          {mfaFactorId ? <form onSubmit={verifyMfa} className="space-y-4">
-            <div className="space-y-1.5"><label className="block text-xs font-semibold uppercase tracking-wider text-white/70">Authenticator code</label><input inputMode="numeric" pattern="[0-9]{6}" required value={mfaCode} onChange={(e) => setMfaCode(e.target.value)} className="w-full px-3.5 py-2.5 border border-white/10 rounded-sm bg-white/5 text-sm text-white" /></div>
-            {error && <div className="p-3 rounded bg-red-500/10 border border-red-500/30 text-xs text-red-400">{error}</div>}
-            <button type="submit" disabled={busy} className="w-full py-2.5 bg-primary text-white text-xs font-semibold uppercase tracking-wider rounded-sm disabled:opacity-50">{busy ? 'Verifying...' : 'Verify and continue'}</button>
-          </form> : <form onSubmit={handleSupabaseLogin} className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-white/70">Admin Email</label>
-              <input
-                type="email"
-                required
-                placeholder="admin@zepnex.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3.5 py-2.5 border border-white/10 rounded-sm bg-white/5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-white/70">Password</label>
-              <input
-                type="password"
-                required
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3.5 py-2.5 border border-white/10 rounded-sm bg-white/5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
-              />
-            </div>
-
-            {error && (
-              <div className="p-3 rounded bg-red-500/10 border border-red-500/30 text-xs text-red-400">
-                {error}
+        <div className="bg-[#1C1A16] border border-white/10 p-6 sm:p-8 rounded-lg shadow-2xl space-y-6 backdrop-blur-md">
+          {mfaFactorId ? (
+            /* MFA Verification Step */
+            <form onSubmit={verifyMfa} className="space-y-5">
+              <div className="text-center space-y-1.5">
+                <div className="w-12 h-12 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center mx-auto">
+                  <ShieldCheck className="w-6 h-6 text-primary" />
+                </div>
+                <p className="text-sm font-semibold text-white">Two-Factor Verification</p>
+                <p className="text-xs text-white/60">
+                  Enter the 6-digit code from your authenticator app.
+                </p>
               </div>
-            )}
 
-            <button
-              type="submit"
-              disabled={busy || !configured}
-              className="w-full py-2.5 border border-white/20 bg-white/10 text-white text-xs font-semibold uppercase tracking-wider rounded-sm hover:bg-white/15 disabled:opacity-50 transition-colors"
-            >
-              {!configured ? 'Supabase is not configured' : busy ? 'Authenticating...' : 'Sign in with Password'}
-            </button>
-          </form>}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-white/70">
+                  Authenticator Code
+                </label>
+                <input
+                  inputMode="numeric"
+                  pattern="[0-9]{6}"
+                  maxLength={6}
+                  required
+                  value={mfaCode}
+                  onChange={(e) => setMfaCode(e.target.value)}
+                  placeholder="000000"
+                  className="w-full px-3.5 py-3 border border-white/10 rounded-sm bg-white/5 text-xl text-white text-center tracking-[0.5em] font-mono placeholder:text-white/20 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
+                />
+              </div>
+
+              {error && (
+                <div className="p-3 rounded bg-red-500/10 border border-red-500/30 text-xs text-red-400">
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={busy || mfaCode.length !== 6}
+                className="w-full py-2.5 bg-primary text-white text-xs font-semibold uppercase tracking-wider rounded-sm disabled:opacity-50 hover:bg-primary/90 transition-all flex items-center justify-center gap-2"
+              >
+                {busy ? 'Verifying...' : 'Verify & Enter Admin Panel'}
+                {!busy && <ArrowRight className="w-3.5 h-3.5" />}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { setMfaFactorId(null); setMfaChallengeId(null); setMfaCode(''); setError(''); }}
+                className="w-full text-xs text-white/40 hover:text-white/70 transition-colors"
+              >
+                ← Back to sign in
+              </button>
+            </form>
+          ) : (
+            /* Main Login Form */
+            <form onSubmit={handleLogin} className="space-y-5">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-white/70">
+                  Admin Email
+                </label>
+                <input
+                  type="email"
+                  required
+                  placeholder="admin@zepnex.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={!configured}
+                  className="w-full px-3.5 py-2.5 border border-white/10 rounded-sm bg-white/5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors disabled:opacity-40"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-white/70">
+                  Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={!configured}
+                    className="w-full px-3.5 py-2.5 pr-10 border border-white/10 rounded-sm bg-white/5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors disabled:opacity-40"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {error && (
+                <div className="p-3 rounded bg-red-500/10 border border-red-500/30 text-xs text-red-400 flex items-start gap-2">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                  <span>{error}</span>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={busy || !configured}
+                className="w-full py-2.5 bg-primary text-white text-xs font-semibold uppercase tracking-wider rounded-sm hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center justify-center gap-2 shadow-md shadow-primary/20"
+              >
+                {busy ? 'Authenticating...' : 'Sign in to Admin Panel'}
+                {!busy && <ArrowRight className="w-3.5 h-3.5" />}
+              </button>
+
+              {/* Security Notice */}
+              <div className="flex items-center gap-2 pt-1">
+                <Lock className="w-3.5 h-3.5 text-white/30 shrink-0" />
+                <p className="text-[10px] text-white/30 leading-relaxed">
+                  Protected by Supabase Auth. Role-based access control is enforced server-side.
+                  Unauthorised access attempts are logged.
+                </p>
+              </div>
+            </form>
+          )}
         </div>
       </div>
 
       {/* Footer */}
-      <div className="text-center text-xs text-white/40">
-        ZEPNEX Multi-Brand Artisan & Premium Commerce · Admin Suite v2.0
+      <div className="text-center text-xs text-white/30">
+        ZEPNEX Multi-Brand Artisan &amp; Premium Commerce · Admin Suite v2.0 ·{' '}
+        <span className="text-white/20">Secured by Supabase</span>
       </div>
     </div>
   );
