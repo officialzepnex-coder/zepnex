@@ -3,6 +3,7 @@ import React from 'react';
 import Link from 'next/link';
 import AppLogo from '@/components/ui/AppLogo';
 import Icon from '@/components/ui/AppIcon';
+import { useCatalog } from '@/lib/catalog';
 
 const footerLinks = [
   { label: 'Home', href: '/' },
@@ -20,6 +21,8 @@ const socialLinks = [
 ];
 
 export default function Footer() {
+  const { homepage } = useCatalog();
+
   return (
     <footer className="border-t border-border bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
@@ -28,7 +31,11 @@ export default function Footer() {
           {/* Left — Logo + tagline */}
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2.5">
-              <AppLogo size={32} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} />
+              <AppLogo
+                size={32}
+                src={homepage.logo}
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              />
               <span className="font-display text-lg font-semibold text-foreground tracking-tight">ZEPNEX</span>
             </div>
             <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">
