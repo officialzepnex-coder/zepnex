@@ -194,6 +194,14 @@ export default function AdminContentPage() {
             </div>
 
             <ImageField
+              label="Storefront Logo"
+              value={form.logo || ''}
+              onChange={(url) => setForm({ ...form, logo: url })}
+              folder="branding"
+              hint="Logo shown in the public header and footer"
+            />
+
+            <ImageField
               label="Hero Spotlight Imagery"
               value={form.image}
               onChange={(url) => setForm({ ...form, image: url })}

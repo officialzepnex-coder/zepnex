@@ -25,6 +25,7 @@ import {
   Zap,
   Activity,
   Users,
+  LockKeyhole,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { isDemoAdminMode, isSupabaseConfigured } from '@/lib/supabase/config';
@@ -155,6 +156,9 @@ function AdminShellContent({ children }: { children: React.ReactNode }) {
       items: [
         { href: '/admin/content', label: 'Homepage Content', icon: PanelsTopLeft },
         { href: '/admin/team', label: 'Team Members', icon: Users },
+        { href: '/admin/users', label: 'Users & Roles', icon: Users },
+        { href: '/admin/security', label: 'Security & MFA', icon: LockKeyhole },
+        { href: '/admin/logs', label: 'Audit Logs', icon: Activity },
       ],
     },
   ];

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import AppLogo from '@/components/ui/AppLogo';
 import Icon from '@/components/ui/AppIcon';
+import { useCart, useCatalog } from '@/lib/catalog';
 
 const navLinks = [
   { label: 'Home', href: '/' },
@@ -15,6 +16,9 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const { items } = useCart();
+  const { homepage } = useCatalog();
+  const cartCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -33,8 +37,18 @@ export default function Header() {
 
   return (
     <>
+      {homepage.announcementBar?.enabled && (
+        <div className="fixed top-0 left-0 right-0 z-[60] bg-[#1C1A16] text-white px-4 py-2 text-center text-xs">
+          <span>{homepage.announcementBar.text}</span>
+          {homepage.announcementBar.linkText && homepage.announcementBar.linkUrl && (
+            <Link href={homepage.announcementBar.linkUrl} className="ml-3 text-primary underline underline-offset-2">
+              {homepage.announcementBar.linkText}
+            </Link>
+          )}
+        </div>
+      )}
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        className={`${homepage.announcementBar?.enabled ? 'top-8' : 'top-0'} fixed left-0 right-0 z-50 transition-all duration-300 ${
           scrolled
             ? 'bg-card/95 backdrop-blur-md border-b border-border shadow-sm'
             : 'bg-transparent'
@@ -43,7 +57,7 @@ export default function Header() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between gap-4">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 flex-shrink-0 z-50">
-            <AppLogo size={36} />
+            <AppLogo size={36} src={homepage.logo} />
             <span className="font-display text-lg sm:text-xl tracking-tight text-foreground hidden sm:block font-semibold">
               ZEPNEX
             </span>
@@ -81,7 +95,7 @@ export default function Header() {
             <button className="relative p-2 text-muted-foreground hover:text-foreground transition-colors">
               <Link href="/cart" className="flex items-center">
                 <Icon name="ShoppingBagIcon" size={22} variant="outline" />
-                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-primary text-primary-foreground text-[9px] font-bold rounded-full flex items-center justify-center">3</span>
+                {cartCount > 0 && <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-primary text-primary-foreground text-[9px] font-bold rounded-full flex items-center justify-center">{cartCount}</span>}
               </Link>
             </button>
           </nav>
@@ -98,7 +112,7 @@ export default function Header() {
             <button className="relative p-2 text-muted-foreground hover:text-foreground transition-colors">
               <Link href="/cart" className="flex items-center">
                 <Icon name="ShoppingBagIcon" size={20} variant="outline" />
-                <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-primary text-primary-foreground text-[8px] font-bold rounded-full flex items-center justify-center">3</span>
+                {cartCount > 0 && <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-primary text-primary-foreground text-[8px] font-bold rounded-full flex items-center justify-center">{cartCount}</span>}
               </Link>
             </button>
             <button

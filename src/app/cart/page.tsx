@@ -1,46 +1,13 @@
 'use client';
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Icon from '@/components/ui/AppIcon';
-
-interface CartItem {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  image: string;
-  brand: string;
-}
+import { useCart } from '@/lib/catalog';
 
 export default function CartPage() {
-  const [cartItems] = useState<CartItem[]>([
-    {
-      id: 'prod-1',
-      name: 'Classic Cotton T-Shirt',
-      price: 499,
-      quantity: 2,
-      image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=product1&scale=80',
-      brand: 'TrendStyle Co.'
-    },
-    {
-      id: 'prod-7',
-      name: 'Wireless Bluetooth Earbuds',
-      price: 2999,
-      quantity: 1,
-      image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=product7&scale=80',
-      brand: 'TechGear Pro'
-    },
-    {
-      id: 'prod-4',
-      name: 'Organic Cotton Bedsheet Set',
-      price: 2499,
-      quantity: 1,
-      image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=product4&scale=80',
-      brand: 'EcoHome Living'
-    }
-  ]);
+  const { items: cartItems, updateQuantity, removeItem } = useCart();
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const shipping = subtotal > 500 ? 0 : 99;
@@ -94,15 +61,15 @@ export default function CartPage() {
 
                     {/* Quantity & Actions */}
                     <div className="flex flex-col items-end gap-4">
-                      <button className="p-1 text-muted-foreground hover:text-foreground transition-colors">
+                      <button onClick={() => removeItem(item.id)} className="p-1 text-muted-foreground hover:text-foreground transition-colors" aria-label={`Remove ${item.name}`}>
                         <Icon name="TrashIcon" size={18} variant="outline" />
                       </button>
                       <div className="flex items-center border border-border rounded-sm">
-                        <button className="w-8 h-8 flex items-center justify-center hover:bg-secondary transition-colors">
+                        <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="w-8 h-8 flex items-center justify-center hover:bg-secondary transition-colors" aria-label="Decrease quantity">
                           <Icon name="MinusIcon" size={14} variant="outline" />
                         </button>
                         <span className="w-8 text-center text-sm font-semibold">{item.quantity}</span>
-                        <button className="w-8 h-8 flex items-center justify-center hover:bg-secondary transition-colors">
+                        <button onClick={() => updateQuantity(item.id, item.quantity + 1)} className="w-8 h-8 flex items-center justify-center hover:bg-secondary transition-colors" aria-label="Increase quantity">
                           <Icon name="PlusIcon" size={14} variant="outline" />
                         </button>
                       </div>

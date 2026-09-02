@@ -17,12 +17,12 @@ export async function updateSession(request: NextRequest) {
   }
 
   const hasDemoCookie = request.cookies.get('zepnex_demo_admin_active')?.value === 'true';
-  if (hasDemoCookie) {
+  if (hasDemoCookie && process.env.NODE_ENV !== 'production') {
     return NextResponse.next({ request });
   }
 
   if (!isSupabaseConfigured()) {
-    // If not configured, allow access in demo mode
+    // Local development can use the existing demo shell when no project is configured.
     return NextResponse.next({ request });
   }
 
@@ -53,10 +53,7 @@ export async function updateSession(request: NextRequest) {
       error,
     } = await supabase.auth.getUser();
 
-    // If Supabase credentials are placeholder / dummy or fetch fails, allow access to admin preview
-    if (error && (error.message.includes('Invalid API key') || error.message.includes('fetch'))) {
-      return NextResponse.next({ request });
-    }
+    if (error) throw error;
 
     if (!user && !isLogin) {
       // If genuine Supabase project is connected and user not logged in, redirect to login
@@ -72,11 +69,21 @@ export async function updateSession(request: NextRequest) {
         .eq('id', user.id)
         .maybeSingle();
 
-      if (profileError || profile?.role !== 'admin') {
+      if (profileError || !profile || !['admin', 'manager'].includes(profile.role)) {
         const url = request.nextUrl.clone();
         url.pathname = '/admin/login';
         url.searchParams.set('error', 'admin_required');
         return NextResponse.redirect(url);
+      }
+
+      if (profile.role === 'admin') {
+        const { data: assurance } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (assurance?.currentLevel !== 'aal2') {
+          const url = request.nextUrl.clone();
+          url.pathname = '/admin/login';
+          url.searchParams.set('error', 'mfa_required');
+          return NextResponse.redirect(url);
+        }
       }
     }
 
@@ -86,8 +93,10 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url);
     }
   } catch {
-    // Graceful fallback
-    return NextResponse.next({ request });
+    const url = request.nextUrl.clone();
+    url.pathname = '/admin/login';
+    url.searchParams.set('error', 'auth_failed');
+    return NextResponse.redirect(url);
   }
 
   return supabaseResponse;

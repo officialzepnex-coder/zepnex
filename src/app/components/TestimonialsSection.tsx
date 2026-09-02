@@ -1,9 +1,11 @@
 'use client';
 import React, { useEffect, useRef } from 'react';
 import Icon from '@/components/ui/AppIcon';
+import { useCatalog } from '@/lib/catalog';
 
 export default function TestimonialsSection() {
   const sectionRef = useRef<HTMLElement>(null);
+  const { testimonials } = useCatalog();
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -32,8 +34,7 @@ export default function TestimonialsSection() {
           </h2>
         </div>
 
-        {/* Empty State */}
-        <div className="animate-on-scroll opacity-100">
+        {testimonials.length === 0 ? <div className="animate-on-scroll opacity-100">
           <div className="border-2 border-dashed border-border rounded-sm bg-secondary/10 py-16 px-6 flex flex-col items-center justify-center text-center mb-6">
             <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-4">
               <Icon name="ChatBubbleLeftRightIcon" size={28} variant="outline" className="text-primary" />
@@ -73,7 +74,20 @@ export default function TestimonialsSection() {
               </div>
             ))}
           </div>
-        </div>
+        </div> : <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6 animate-on-scroll opacity-100">
+          {testimonials.slice(0, 6).map((review) => (
+            <article key={review.id} className="bg-card border border-border p-6 sm:p-7 rounded-sm">
+              <div className="flex gap-1 mb-5" aria-label={`${review.rating} out of 5 stars`}>
+                {[1, 2, 3, 4, 5].map((star) => <span key={star} className={star <= review.rating ? 'text-primary' : 'text-muted'}>★</span>)}
+              </div>
+              <p className="text-sm leading-relaxed text-foreground mb-6">“{review.comment}”</p>
+              <div className="flex items-center gap-3 pt-4 border-t border-border">
+                {review.avatar ? <img src={review.avatar} alt="" className="w-10 h-10 rounded-full object-cover" /> : <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">{review.author.charAt(0)}</div>}
+                <div><p className="text-sm font-semibold text-foreground">{review.author}</p><p className="text-xs text-muted-foreground">{review.role || 'Verified Shopper'}</p></div>
+              </div>
+            </article>
+          ))}
+        </div>}
       </div>
     </section>
   );

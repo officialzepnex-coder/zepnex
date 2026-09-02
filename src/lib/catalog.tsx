@@ -119,3 +119,65 @@ export function useCatalog() {
   return useContext(CatalogContext);
 }
 
+export interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  image: string;
+  brand: string;
+}
+
+interface CartState {
+  items: CartItem[];
+  addItem: (item: Omit<CartItem, 'quantity'>, quantity?: number) => void;
+  updateQuantity: (id: string, quantity: number) => void;
+  removeItem: (id: string) => void;
+}
+
+const CartContext = createContext<CartState>({
+  items: [],
+  addItem: () => {},
+  updateQuantity: () => {},
+  removeItem: () => {},
+});
+
+export function CartProvider({ children }: { children: React.ReactNode }) {
+  const [items, setItems] = useState<CartItem[]>([]);
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem('zepnex_cart');
+      if (saved) setItems(JSON.parse(saved) as CartItem[]);
+    } catch {
+      setItems([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem('zepnex_cart', JSON.stringify(items));
+    window.dispatchEvent(new CustomEvent('zepnex_cart_updated'));
+  }, [items]);
+
+  const addItem = useCallback((item: Omit<CartItem, 'quantity'>, quantity = 1) => {
+    setItems((current) => {
+      const existing = current.find((entry) => entry.id === item.id);
+      return existing
+        ? current.map((entry) => entry.id === item.id ? { ...entry, quantity: entry.quantity + quantity } : entry)
+        : [...current, { ...item, quantity }];
+    });
+  }, []);
+
+  const updateQuantity = useCallback((id: string, quantity: number) => {
+    setItems((current) => quantity > 0 ? current.map((item) => item.id === id ? { ...item, quantity } : item) : current.filter((item) => item.id !== id));
+  }, []);
+
+  const removeItem = useCallback((id: string) => updateQuantity(id, 0), [updateQuantity]);
+
+  return <CartContext.Provider value={{ items, addItem, updateQuantity, removeItem }}>{children}</CartContext.Provider>;
+}
+
+export function useCart() {
+  return useContext(CartContext);
+}
+

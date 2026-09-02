@@ -23,6 +23,31 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
+  const [mfaChallengeId, setMfaChallengeId] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState('');
+  const [mfaRequired, setMfaRequired] = useState(false);
+
+  React.useEffect(() => {
+    setMfaRequired(new URLSearchParams(window.location.search).get('error') === 'mfa_required');
+  }, []);
+
+  const verifyMfa = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!mfaFactorId || !mfaChallengeId) return;
+    setBusy(true);
+    try {
+      const supabase = createClient();
+      const { error: verifyError } = await supabase.auth.mfa.verify({ factorId: mfaFactorId, challengeId: mfaChallengeId, code: mfaCode });
+      if (verifyError) throw verifyError;
+      router.push('/admin');
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Invalid authenticator code');
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const handleSupabaseLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,9 +70,24 @@ export default function AdminLoginPage() {
         .maybeSingle();
 
       if (profileError) throw profileError;
-      if (!profile || (profile as { role?: string }).role !== 'admin') {
+      if (!profile || !['admin', 'manager'].includes((profile as { role?: string }).role || '')) {
         await supabase.auth.signOut();
         throw new Error('This Supabase user is not an admin yet. Run: update public.profiles set role = \'admin\' where email = \'your-email@example.com\';');
+      }
+
+      if ((profile as { role?: string }).role === 'admin') {
+        const { data: assurance } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (assurance?.currentLevel !== 'aal2') {
+          const { data: factors } = await supabase.auth.mfa.listFactors();
+          const factor = factors?.totp?.find((entry) => entry.status === 'verified');
+          if (!factor) throw new Error('Admin MFA is required. Enroll an authenticator factor before signing in.');
+          const { data: challenge, error: challengeError } = await supabase.auth.mfa.challenge({ factorId: factor.id });
+          if (challengeError) throw challengeError;
+          setMfaFactorId(factor.id);
+          setMfaChallengeId(challenge.id);
+          setBusy(false);
+          return;
+        }
       }
 
       localStorage.removeItem('zepnex_demo_admin_active');
@@ -138,8 +178,13 @@ export default function AdminLoginPage() {
             </span>
           </div>
 
-          {/* Supabase Password Form */}
-          <form onSubmit={handleSupabaseLogin} className="space-y-4">
+          {mfaRequired && <div className="p-3 rounded bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300">Authenticator verification is required for this admin account.</div>}
+
+          {mfaFactorId ? <form onSubmit={verifyMfa} className="space-y-4">
+            <div className="space-y-1.5"><label className="block text-xs font-semibold uppercase tracking-wider text-white/70">Authenticator code</label><input inputMode="numeric" pattern="[0-9]{6}" required value={mfaCode} onChange={(e) => setMfaCode(e.target.value)} className="w-full px-3.5 py-2.5 border border-white/10 rounded-sm bg-white/5 text-sm text-white" /></div>
+            {error && <div className="p-3 rounded bg-red-500/10 border border-red-500/30 text-xs text-red-400">{error}</div>}
+            <button type="submit" disabled={busy} className="w-full py-2.5 bg-primary text-white text-xs font-semibold uppercase tracking-wider rounded-sm disabled:opacity-50">{busy ? 'Verifying...' : 'Verify and continue'}</button>
+          </form> : <form onSubmit={handleSupabaseLogin} className="space-y-4">
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold uppercase tracking-wider text-white/70">Admin Email</label>
               <input
@@ -177,7 +222,7 @@ export default function AdminLoginPage() {
             >
               {busy ? 'Authenticating...' : 'Sign in with Password'}
             </button>
-          </form>
+          </form>}
         </div>
       </div>
 

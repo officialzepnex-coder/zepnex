@@ -9,7 +9,10 @@ create extension if not exists pgcrypto;
 create table if not exists public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
   email text,
-  role text not null default 'user' check (role in ('user', 'admin')),
+  role text not null default 'customer' check (role in ('customer', 'manager', 'admin')),
+  display_name text,
+  disabled boolean not null default false,
+  updated_at timestamptz not null default now(),
   created_at timestamptz not null default now()
 );
 
@@ -21,7 +24,7 @@ set search_path = public
 as $$
 begin
   insert into public.profiles (id, email, role)
-  values (new.id, new.email, 'user')
+  values (new.id, new.email, 'customer')
   on conflict (id) do nothing;
   return new;
 end;
@@ -44,6 +47,18 @@ as $$
     where id = auth.uid() and role = 'admin'
   );
 $$;
+
+create or replace function public.has_role(required_role text)
+returns boolean
+language sql stable security definer set search_path = public
+as $$
+  select exists (select 1 from public.profiles where id = auth.uid() and role = required_role and not disabled);
+$$;
+
+create or replace function public.is_staff()
+returns boolean
+language sql stable security definer set search_path = public
+as $$ select public.has_role('admin') or public.has_role('manager'); $$;
 
 create or replace function public.set_updated_at()
 returns trigger
@@ -169,6 +184,26 @@ create table if not exists public.team_members (
 alter table public.categories add column if not exists icon text not null default 'Folder';
 alter table public.faqs add column if not exists category text not null default 'General';
 
+-- Backward-compatible repairs for projects created with an older schema.
+-- CREATE TABLE IF NOT EXISTS does not add columns to an existing table.
+alter table public.products add column if not exists stock_quantity int not null default 0;
+alter table public.brands add column if not exists website text;
+alter table public.brands add column if not exists contact_email text;
+alter table public.brands add column if not exists featured boolean not null default true;
+alter table public.brands add column if not exists published boolean not null default true;
+alter table public.products add column if not exists images text[] default '{}';
+alter table public.products add column if not exists badge text;
+alter table public.products add column if not exists featured boolean not null default false;
+alter table public.products add column if not exists published boolean not null default true;
+alter table public.team_members add column if not exists role text not null default '';
+alter table public.team_members add column if not exists image text not null default '';
+alter table public.team_members add column if not exists bio text not null default '';
+alter table public.team_members add column if not exists sort_order int not null default 0;
+alter table public.team_members add column if not exists published boolean not null default true;
+
+-- Make newly added columns visible to Supabase's PostgREST schema cache.
+notify pgrst, 'reload schema';
+
 create index if not exists brands_published_name_idx on public.brands (published, name);
 create index if not exists products_published_name_idx on public.products (published, name);
 create index if not exists products_published_category_idx on public.products (published, category);
@@ -237,13 +272,39 @@ alter table public.faqs enable row level security;
 alter table public.site_settings enable row level security;
 alter table public.team_members enable row level security;
 
+alter table public.profiles add column if not exists display_name text;
+alter table public.profiles add column if not exists disabled boolean not null default false;
+alter table public.profiles add column if not exists updated_at timestamptz not null default now();
+alter table public.profiles drop constraint if exists profiles_role_check;
+alter table public.profiles add constraint profiles_role_check check (role in ('customer', 'manager', 'admin'));
+update public.profiles set role = 'customer' where role = 'user';
+
+create table if not exists public.audit_logs (
+  id uuid primary key default gen_random_uuid(),
+  actor_id uuid references auth.users(id) on delete set null,
+  action text not null,
+  entity_type text not null,
+  entity_id text,
+  before_data jsonb,
+  after_data jsonb,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+alter table public.audit_logs enable row level security;
+create index if not exists audit_logs_created_idx on public.audit_logs (created_at desc);
+create index if not exists audit_logs_actor_idx on public.audit_logs (actor_id);
+create index if not exists audit_logs_entity_idx on public.audit_logs (entity_type, entity_id);
+
+drop policy if exists "audit logs admin read" on public.audit_logs;
+create policy "audit logs admin read" on public.audit_logs for select using (public.has_role('admin'));
+
 drop policy if exists "profiles self read" on public.profiles;
 create policy "profiles self read" on public.profiles
   for select using (auth.uid() = id or public.is_admin());
 
 drop policy if exists "profiles admin write" on public.profiles;
 create policy "profiles admin write" on public.profiles
-  for all using (public.is_admin()) with check (public.is_admin());
+  for all using (public.has_role('admin')) with check (public.has_role('admin'));
 
 drop policy if exists "brands public read" on public.brands;
 create policy "brands public read" on public.brands
@@ -251,7 +312,7 @@ create policy "brands public read" on public.brands
 
 drop policy if exists "brands admin write" on public.brands;
 create policy "brands admin write" on public.brands
-  for all using (public.is_admin()) with check (public.is_admin());
+  for all using (public.is_staff()) with check (public.is_staff());
 
 drop policy if exists "products public read" on public.products;
 create policy "products public read" on public.products
@@ -259,7 +320,7 @@ create policy "products public read" on public.products
 
 drop policy if exists "products admin write" on public.products;
 create policy "products admin write" on public.products
-  for all using (public.is_admin()) with check (public.is_admin());
+  for all using (public.is_staff()) with check (public.is_staff());
 
 drop policy if exists "categories public read" on public.categories;
 create policy "categories public read" on public.categories
@@ -267,7 +328,7 @@ create policy "categories public read" on public.categories
 
 drop policy if exists "categories admin write" on public.categories;
 create policy "categories admin write" on public.categories
-  for all using (public.is_admin()) with check (public.is_admin());
+  for all using (public.is_staff()) with check (public.is_staff());
 
 drop policy if exists "reviews public read" on public.reviews;
 create policy "reviews public read" on public.reviews
@@ -275,7 +336,7 @@ create policy "reviews public read" on public.reviews
 
 drop policy if exists "reviews admin write" on public.reviews;
 create policy "reviews admin write" on public.reviews
-  for all using (public.is_admin()) with check (public.is_admin());
+  for all using (public.is_staff()) with check (public.is_staff());
 
 drop policy if exists "applications public insert" on public.brand_applications;
 create policy "applications public insert" on public.brand_applications
@@ -299,7 +360,7 @@ create policy "team members public read" on public.team_members
 
 drop policy if exists "team members admin write" on public.team_members;
 create policy "team members admin write" on public.team_members
-  for all using (public.is_admin()) with check (public.is_admin());
+  for all using (public.is_staff()) with check (public.is_staff());
 
 drop policy if exists "faqs public read" on public.faqs;
 create policy "faqs public read" on public.faqs
@@ -307,7 +368,7 @@ create policy "faqs public read" on public.faqs
 
 drop policy if exists "faqs admin write" on public.faqs;
 create policy "faqs admin write" on public.faqs
-  for all using (public.is_admin()) with check (public.is_admin());
+  for all using (public.is_staff()) with check (public.is_staff());
 
 drop policy if exists "settings public read" on public.site_settings;
 create policy "settings public read" on public.site_settings

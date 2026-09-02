@@ -2,7 +2,7 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 
 export type ApplicationStatus = 'pending' | 'approved' | 'rejected';
 export type ReviewKind = 'homepage' | 'brand' | 'product';
-export type UserRole = 'user' | 'admin';
+export type UserRole = 'customer' | 'manager' | 'admin';
 
 export interface TeamMemberRow {
   id: string;
@@ -117,6 +117,21 @@ export interface ProfileRow {
   id: string;
   email: string | null;
   role: UserRole;
+  display_name?: string | null;
+  disabled?: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface AuditLogRow {
+  id: string;
+  actor_id: string | null;
+  action: string;
+  entity_type: string;
+  entity_id: string | null;
+  before_data: Json | null;
+  after_data: Json | null;
+  metadata: Json;
   created_at: string;
 }
 
@@ -128,6 +143,7 @@ export interface HomepageSettings {
   image: string;
   ctaPrimary: string;
   ctaSecondary: string;
+  logo?: string;
   announcementBar?: {
     enabled: boolean;
     text: string;
@@ -160,6 +176,12 @@ export interface Database {
         Row: ProfileRow;
         Insert: Partial<ProfileRow>;
         Update: Partial<ProfileRow>;
+        Relationships: [];
+      };
+      audit_logs: {
+        Row: AuditLogRow;
+        Insert: Partial<AuditLogRow>;
+        Update: Partial<AuditLogRow>;
         Relationships: [];
       };
       brands: {
