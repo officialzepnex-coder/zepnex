@@ -221,7 +221,7 @@ export default function AdminDashboardPage() {
               <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                 dbStatus.ok && !dbStatus.isFallback ? 'bg-emerald-500/20 text-emerald-700' : 'bg-amber-500/20 text-amber-700'
               }`}>
-                {dbStatus.ok && !dbStatus.isFallback ? 'Cloud Synchronized' : 'Offline / Demo Ready'}
+                {dbStatus.ok && !dbStatus.isFallback ? 'Cloud Synchronized' : 'Supabase Not Connected'}
               </span>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">

@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import { brands as staticBrands, type Brand } from '@/data/brands';
 import { products as staticProducts, type Product } from '@/data/products';
-import { isDemoAdminMode, isSupabaseConfigured } from '@/lib/supabase/config';
+import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { mapBrand, mapProduct } from '@/lib/mappers';
 import { DEFAULT_HOMEPAGE, type FaqRow, type HomepageSettings, type ReviewRow } from '@/types/database';
 import { DataService } from './supabase/data-service';
@@ -53,7 +53,7 @@ export function CatalogProvider({ children }: { children: React.ReactNode }) {
     faqs: [],
     homepage: DEFAULT_HOMEPAGE,
     loading: true,
-    usingFallback: !isSupabaseConfigured() || isDemoAdminMode(),
+    usingFallback: !isSupabaseConfigured(),
   });
 
   const applyCatalogData = useCallback((data: Awaited<ReturnType<typeof DataService.getPublicCatalog>>, loading: boolean) => {
@@ -69,7 +69,7 @@ export function CatalogProvider({ children }: { children: React.ReactNode }) {
       faqs: faqRows,
       homepage: homepageSettings || DEFAULT_HOMEPAGE,
       loading,
-      usingFallback: !isSupabaseConfigured() || isDemoAdminMode(),
+      usingFallback: !isSupabaseConfigured(),
     });
   }, []);
 

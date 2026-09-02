@@ -28,7 +28,7 @@ import {
   LockKeyhole,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { isDemoAdminMode, isSupabaseConfigured } from '@/lib/supabase/config';
+import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { ToastProvider, useToast } from './ToastContext';
 import GlobalSearchModal from './GlobalSearchModal';
 import { DataService } from '@/lib/supabase/data-service';
@@ -84,14 +84,14 @@ function AdminShellContent({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     loadNavData();
 
-    if (isSupabaseConfigured() && !isDemoAdminMode()) {
+    if (isSupabaseConfigured()) {
       const supabase = createClient();
       supabase.auth.getUser().then(({ data }) => {
         if (data.user?.email) setEmail(data.user.email);
         else setEmail('admin@zepnex.com');
       }).catch(() => setEmail('admin@zepnex.com'));
     } else {
-      setEmail('demo-admin@zepnex.com');
+      setEmail('');
     }
 
     const handleUpdate = () => loadNavData();
@@ -113,7 +113,7 @@ function AdminShellContent({ children }: { children: React.ReactNode }) {
   }, [loadNavData]);
 
   const signOut = async () => {
-    if (isSupabaseConfigured() && !isDemoAdminMode()) {
+    if (isSupabaseConfigured()) {
       try {
         const supabase = createClient();
         await supabase.auth.signOut();
@@ -121,8 +121,6 @@ function AdminShellContent({ children }: { children: React.ReactNode }) {
         console.warn('Sign out error:', e);
       }
     }
-    localStorage.removeItem('zepnex_demo_admin_active');
-    document.cookie = 'zepnex_demo_admin_active=; path=/; max-age=0; SameSite=Lax';
     router.push('/admin/login');
     router.refresh();
   };
@@ -239,7 +237,7 @@ function AdminShellContent({ children }: { children: React.ReactNode }) {
                 connectionStatus.ok && !connectionStatus.isFallback ? 'bg-emerald-400' : 'bg-amber-400'
               }`} />
               <span className="font-medium truncate max-w-[140px]">
-                {connectionStatus.ok && !connectionStatus.isFallback ? 'Supabase Live' : 'Local Cache (Demo)'}
+                {connectionStatus.ok && !connectionStatus.isFallback ? 'Supabase Live' : 'Supabase Not Connected'}
               </span>
             </div>
             <Zap className="w-3.5 h-3.5 text-amber-400" />

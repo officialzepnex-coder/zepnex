@@ -6,6 +6,7 @@ export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isAdminPath = pathname.startsWith('/admin');
   const isLogin = pathname.startsWith('/admin/login');
+  const isSecurity = pathname.startsWith('/admin/security');
 
   if (!isAdminPath) {
     return NextResponse.next({ request });
@@ -16,14 +17,11 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.next({ request });
   }
 
-  const hasDemoCookie = request.cookies.get('zepnex_demo_admin_active')?.value === 'true';
-  if (hasDemoCookie && process.env.NODE_ENV !== 'production') {
-    return NextResponse.next({ request });
-  }
-
   if (!isSupabaseConfigured()) {
-    // Local development can use the existing demo shell when no project is configured.
-    return NextResponse.next({ request });
+    const url = request.nextUrl.clone();
+    url.pathname = '/admin/login';
+    url.searchParams.set('error', 'supabase_required');
+    return NextResponse.redirect(url);
   }
 
   let supabaseResponse = NextResponse.next({ request });
@@ -78,7 +76,7 @@ export async function updateSession(request: NextRequest) {
 
       if (profile.role === 'admin') {
         const { data: assurance } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-        if (assurance?.currentLevel !== 'aal2') {
+        if (assurance?.currentLevel !== 'aal2' && !isSecurity) {
           const url = request.nextUrl.clone();
           url.pathname = '/admin/login';
           url.searchParams.set('error', 'mfa_required');

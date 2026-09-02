@@ -1,7 +1,7 @@
 'use client';
 
 import { createClient } from './client';
-import { isDemoAdminMode, isSupabaseConfigured } from './config';
+import { isSupabaseConfigured } from './config';
 import { brands as initialBrands } from '@/data/brands';
 import { products as initialProducts } from '@/data/products';
 import {
@@ -240,7 +240,7 @@ function setLocal<T>(key: string, value: T, notify = true): void {
 }
 
 function shouldUseSupabase() {
-  return isSupabaseConfigured() && !isDemoAdminMode();
+  return isSupabaseConfigured();
 }
 
 function failSupabaseWrite(action: string, error: unknown): never {
@@ -335,9 +335,7 @@ export class DataService {
 
   public static async checkConnection(): Promise<{ ok: boolean; message: string; isFallback: boolean }> {
     if (!shouldUseSupabase()) {
-      const message = isDemoAdminMode()
-        ? 'Running in Demo Admin Mode (Local Cache only). Sign out and use Supabase Auth for live database writes.'
-        : 'Running in Local Cache Mode. Add Supabase keys to connect live database.';
+      const message = 'Supabase is not configured. Configure Supabase to enable live database writes.';
       return {
         ok: true,
         isFallback: true,

@@ -326,7 +326,7 @@ create policy "admin write settings" on public.site_settings for all using (true
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="font-semibold text-base">
-                    {stats?.connected ? 'Supabase Database Connected' : 'Local Persistent Cache Active (Demo Mode)'}
+                    {stats?.connected ? 'Supabase Database Connected' : 'Supabase Database Not Connected'}
                   </h3>
                   <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${
                     stats?.connected ? 'bg-emerald-500/20 text-emerald-700' : 'bg-amber-500/20 text-amber-700'

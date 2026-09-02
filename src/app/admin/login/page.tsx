@@ -5,12 +5,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   Lock,
-  ArrowRight,
-  Sparkles,
-  Zap,
-  CheckCircle2,
-  Server,
-  Database,
   ExternalLink,
 } from 'lucide-react';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
@@ -80,7 +74,11 @@ export default function AdminLoginPage() {
         if (assurance?.currentLevel !== 'aal2') {
           const { data: factors } = await supabase.auth.mfa.listFactors();
           const factor = factors?.totp?.find((entry) => entry.status === 'verified');
-          if (!factor) throw new Error('Admin MFA is required. Enroll an authenticator factor before signing in.');
+          if (!factor) {
+            router.push('/admin/security');
+            router.refresh();
+            return;
+          }
           const { data: challenge, error: challengeError } = await supabase.auth.mfa.challenge({ factorId: factor.id });
           if (challengeError) throw challengeError;
           setMfaFactorId(factor.id);
@@ -90,9 +88,6 @@ export default function AdminLoginPage() {
         }
       }
 
-      localStorage.removeItem('zepnex_demo_admin_active');
-      document.cookie = 'zepnex_demo_admin_active=; path=/; max-age=0; SameSite=Lax';
-
       router.push('/admin');
       router.refresh();
     } catch (err) {
@@ -100,16 +95,6 @@ export default function AdminLoginPage() {
     } finally {
       setBusy(false);
     }
-  };
-
-  const handleDemoLogin = () => {
-    // Instant dev/demo bypass into Admin Suite
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('zepnex_demo_admin_active', 'true');
-      document.cookie = 'zepnex_demo_admin_active=true; path=/; max-age=2592000; SameSite=Lax';
-    }
-    router.push('/admin');
-    router.refresh();
   };
 
   return (
@@ -149,32 +134,10 @@ export default function AdminLoginPage() {
         </div>
 
         <div className="bg-[#1C1A16] border border-white/10 p-6 sm:p-8 rounded-lg shadow-2xl space-y-6 backdrop-blur-md">
-          {/* 1-Click Demo / Test Admin Button */}
-          <div className="p-4 bg-primary/10 border border-primary/30 rounded-md space-y-2.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-primary flex items-center gap-1.5 uppercase tracking-wider">
-                <Zap className="w-4 h-4" /> Quick Preview Access
-              </span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary text-white font-semibold">
-                Instant Access
-              </span>
-            </div>
-            <p className="text-xs text-white/75 leading-relaxed">
-              Explore the fully editable admin suite, test CRUD operations, and sync sample data in interactive demo mode.
-            </p>
-            <button
-              onClick={handleDemoLogin}
-              className="w-full py-2.5 bg-primary text-white text-xs font-semibold uppercase tracking-wider rounded-sm hover:bg-primary/90 transition-all flex items-center justify-center gap-2 shadow-md shadow-primary/20"
-            >
-              <span>Continue as Demo Admin</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
           <div className="relative flex items-center justify-center">
             <div className="border-t border-white/10 w-full" />
             <span className="bg-[#1C1A16] px-3 text-[10px] uppercase tracking-widest text-white/40 font-mono">
-              Or Sign in with Supabase Auth
+              Sign in with Supabase Auth
             </span>
           </div>
 
@@ -217,10 +180,10 @@ export default function AdminLoginPage() {
 
             <button
               type="submit"
-              disabled={busy}
+              disabled={busy || !configured}
               className="w-full py-2.5 border border-white/20 bg-white/10 text-white text-xs font-semibold uppercase tracking-wider rounded-sm hover:bg-white/15 disabled:opacity-50 transition-colors"
             >
-              {busy ? 'Authenticating...' : 'Sign in with Password'}
+              {!configured ? 'Supabase is not configured' : busy ? 'Authenticating...' : 'Sign in with Password'}
             </button>
           </form>}
         </div>

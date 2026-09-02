@@ -23,14 +23,6 @@ export function isSupabaseConfigured() {
   }
 }
 
-export function isDemoAdminMode() {
-  if (typeof window === 'undefined') return false;
-  return (
-    localStorage.getItem('zepnex_demo_admin_active') === 'true' ||
-    document.cookie.split('; ').some((cookie) => cookie.startsWith('zepnex_demo_admin_active=true'))
-  );
-}
-
 export function getSupabaseEnv() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
