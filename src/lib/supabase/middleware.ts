@@ -17,6 +17,11 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.next({ request });
   }
 
+  // Login must always be renderable so configuration and auth errors can be shown.
+  if (isLogin) {
+    return NextResponse.next({ request });
+  }
+
   // If Supabase is not configured, block access until auth credentials are added.
   if (!isSupabaseConfigured()) {
     const url = request.nextUrl.clone();
@@ -54,8 +59,6 @@ export async function updateSession(request: NextRequest) {
     if (error) throw error;
 
     if (!user) {
-      if (isLogin) return supabaseResponse;
-
       // Not authenticated — redirect to login
       const url = request.nextUrl.clone();
       url.pathname = '/admin/login';
