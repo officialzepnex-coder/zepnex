@@ -6,21 +6,21 @@ export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isAdminPath = pathname.startsWith('/admin');
   const isLogin = pathname.startsWith('/admin/login');
+  const isSetup = pathname.startsWith('/admin/setup');
 
   if (!isAdminPath) {
     return NextResponse.next({ request });
   }
 
-  // Allow access to login page always
-  if (isLogin) {
+  // The setup page explains how to configure the auth provider and is public.
+  if (isSetup) {
     return NextResponse.next({ request });
   }
 
-  // If Supabase is not configured, block access and redirect to login with an error flag
+  // If Supabase is not configured, block access until auth credentials are added.
   if (!isSupabaseConfigured()) {
     const url = request.nextUrl.clone();
-    url.pathname = '/admin/login';
-    url.searchParams.set('error', 'not_configured');
+    url.pathname = '/admin/setup';
     return NextResponse.redirect(url);
   }
 
@@ -54,6 +54,8 @@ export async function updateSession(request: NextRequest) {
     if (error) throw error;
 
     if (!user) {
+      if (isLogin) return supabaseResponse;
+
       // Not authenticated — redirect to login
       const url = request.nextUrl.clone();
       url.pathname = '/admin/login';

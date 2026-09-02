@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { Suspense, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -15,7 +15,7 @@ import {
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { createClient } from '@/lib/supabase/client';
 
-export default function AdminLoginPage() {
+function AdminLoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const configured = isSupabaseConfigured();
@@ -25,6 +25,22 @@ export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+
+  const recordLogin = () => {
+    const now = new Date().toISOString();
+    localStorage.setItem('zepnex_last_login', now);
+    const count = parseInt(localStorage.getItem('zepnex_login_count') || '0', 10);
+    localStorage.setItem('zepnex_login_count', String(count + 1));
+    const device = `${navigator.userAgent.includes('Windows') ? 'Windows' : navigator.userAgent.includes('Mac') ? 'macOS' : navigator.userAgent.includes('Linux') ? 'Linux' : 'Unknown'} · ${navigator.userAgent.includes('Edg/') ? 'Edge' : navigator.userAgent.includes('Chrome') ? 'Chrome' : navigator.userAgent.includes('Firefox') ? 'Firefox' : navigator.userAgent.includes('Safari') ? 'Safari' : 'Browser'}`;
+    try {
+      const raw = localStorage.getItem('zepnex_login_history');
+      const history = raw ? JSON.parse(raw) : [];
+      history.unshift({ timestamp: now, device });
+      localStorage.setItem('zepnex_login_history', JSON.stringify(history.slice(0, 10)));
+    } catch {
+      localStorage.setItem('zepnex_login_history', JSON.stringify([{ timestamp: now, device }]));
+    }
+  };
 
   // MFA step state (kept for real Supabase MFA flow)
   const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
@@ -52,6 +68,7 @@ export default function AdminLoginPage() {
         code: mfaCode,
       });
       if (verifyError) throw verifyError;
+      recordLogin();
       router.push('/admin');
       router.refresh();
     } catch (err) {
@@ -111,9 +128,9 @@ export default function AdminLoginPage() {
         }
       }
 
-      // Store last login time
+      // Store last login time and login history after successful authentication.
       if (typeof window !== 'undefined') {
-        localStorage.setItem('zepnex_last_login', new Date().toISOString());
+        recordLogin();
       }
 
       router.push('/admin');
@@ -224,6 +241,11 @@ export default function AdminLoginPage() {
                 </div>
               )}
 
+              <div className="flex items-start gap-2 rounded-sm border border-amber-500/20 bg-amber-500/5 p-3 text-[10px] leading-relaxed text-amber-200/80">
+                <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-300" />
+                <span>Several failed attempts may temporarily lock this account. Sign-in attempts are monitored.</span>
+              </div>
+
               <button
                 type="submit"
                 disabled={busy || mfaCode.length !== 6}
@@ -308,6 +330,10 @@ export default function AdminLoginPage() {
                   Unauthorised access attempts are logged.
                 </p>
               </div>
+              <div className="flex items-start gap-2 border-t border-white/5 pt-3 text-[10px] leading-relaxed text-white/35">
+                <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <span>Sign in only from a trusted device and network. Your browser and approximate access location may be logged for security.</span>
+              </div>
             </form>
           )}
         </div>
@@ -319,5 +345,13 @@ export default function AdminLoginPage() {
         <span className="text-white/20">Secured by Supabase</span>
       </div>
     </div>
+  );
+}
+
+export default function AdminLoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#14120E]" />}>
+      <AdminLoginForm />
+    </Suspense>
   );
 }

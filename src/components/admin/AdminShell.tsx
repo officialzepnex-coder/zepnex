@@ -87,7 +87,7 @@ function AdminShellContent({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     loadNavData();
 
-    // Always attempt to get the real Supabase user — no demo fallback
+    // Always attempt to get the authenticated Supabase user.
     if (isSupabaseConfigured()) {
       const supabase = createClient();
       supabase.auth.getUser().then(({ data }) => {
@@ -96,12 +96,12 @@ function AdminShellContent({ children }: { children: React.ReactNode }) {
         }
       }).catch(() => {});
 
-      supabase
-        .from('profiles')
-        .select('role, email')
-        .limit(1)
-        .maybeSingle()
-        .then(({ data }) => {
+      void (async () => {
+        try {
+          const { data } = await (supabase.from('profiles') as any)
+            .select('role, email')
+            .limit(1)
+            .maybeSingle() as { data: { role?: string } | null };
           if (data?.role) {
             const roleMap: Record<string, string> = {
               admin: 'Super Admin',
@@ -110,8 +110,10 @@ function AdminShellContent({ children }: { children: React.ReactNode }) {
             };
             setRole(roleMap[data.role] || 'Administrator');
           }
-        })
-        .catch(() => {});
+        } catch {
+          // Profile details are supplementary to the authenticated session.
+        }
+      })();
     }
 
     const handleUpdate = () => loadNavData();

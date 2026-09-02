@@ -43,5 +43,6 @@ turbo/
 .supabase
 supabase/
 .sql
-schema.sql
+schema.sql/
+
 
