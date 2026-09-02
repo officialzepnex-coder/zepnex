@@ -46,6 +46,9 @@ function AdminLoginForm() {
   const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
   const [mfaChallengeId, setMfaChallengeId] = useState<string | null>(null);
   const [mfaCode, setMfaCode] = useState('');
+  const [enrollmentFactorId, setEnrollmentFactorId] = useState<string | null>(null);
+  const [enrollmentQrCode, setEnrollmentQrCode] = useState('');
+  const [enrollmentSecret, setEnrollmentSecret] = useState('');
 
   // Error banner from middleware redirect params
   const urlError = searchParams.get('error');
@@ -73,6 +76,33 @@ function AdminLoginForm() {
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invalid authenticator code.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const verifyEnrollment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!enrollmentFactorId) return;
+    setBusy(true);
+    setError('');
+    try {
+      const supabase = createClient();
+      const { data: challenge, error: challengeError } = await supabase.auth.mfa.challenge({
+        factorId: enrollmentFactorId,
+      });
+      if (challengeError) throw challengeError;
+      const { error: verifyError } = await supabase.auth.mfa.verify({
+        factorId: enrollmentFactorId,
+        challengeId: challenge.id,
+        code: mfaCode,
+      });
+      if (verifyError) throw verifyError;
+      recordLogin();
+      router.push('/admin');
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not enable authenticator.');
     } finally {
       setBusy(false);
     }
@@ -113,9 +143,15 @@ function AdminLoginForm() {
           const { data: factors } = await supabase.auth.mfa.listFactors();
           const factor = factors?.totp?.find((entry) => entry.status === 'verified');
           if (!factor) {
-            throw new Error(
-              'MFA is required for admin accounts. Enroll an authenticator app in Supabase before signing in.'
-            );
+            const { data: enrollment, error: enrollmentError } = await supabase.auth.mfa.enroll({
+              factorType: 'totp',
+            });
+            if (enrollmentError) throw enrollmentError;
+            setEnrollmentFactorId(enrollment.id);
+            setEnrollmentQrCode(enrollment.totp.qr_code);
+            setEnrollmentSecret(enrollment.totp.secret);
+            setBusy(false);
+            return;
           }
           const { data: challenge, error: challengeError } = await supabase.auth.mfa.challenge({
             factorId: factor.id,
@@ -206,7 +242,33 @@ function AdminLoginForm() {
         )}
 
         <div className="bg-[#1C1A16] border border-white/10 p-6 sm:p-8 rounded-lg shadow-2xl space-y-6 backdrop-blur-md">
-          {mfaFactorId ? (
+          {enrollmentFactorId ? (
+            <form onSubmit={verifyEnrollment} className="space-y-5">
+              <div className="text-center space-y-1.5">
+                <div className="w-12 h-12 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center mx-auto">
+                  <ShieldCheck className="w-6 h-6 text-primary" />
+                </div>
+                <p className="text-sm font-semibold text-white">Set up authenticator</p>
+                <p className="text-xs text-white/60">Scan this QR code, then enter the six-digit code from your app.</p>
+              </div>
+              <img src={`data:image/svg+xml;utf8,${encodeURIComponent(enrollmentQrCode)}`} alt="Authenticator setup QR code" className="mx-auto h-40 w-40 rounded bg-white p-3" />
+              <p className="text-center text-[10px] text-white/45 break-all">Manual setup key: {enrollmentSecret}</p>
+              <input
+                inputMode="numeric"
+                pattern="[0-9]{6}"
+                maxLength={6}
+                required
+                value={mfaCode}
+                onChange={(e) => setMfaCode(e.target.value)}
+                placeholder="000000"
+                className="w-full px-3.5 py-3 border border-white/10 rounded-sm bg-white/5 text-xl text-white text-center tracking-[0.5em] font-mono placeholder:text-white/20 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
+              />
+              {error && <div className="p-3 rounded bg-red-500/10 border border-red-500/30 text-xs text-red-400">{error}</div>}
+              <button type="submit" disabled={busy || mfaCode.length !== 6} className="w-full py-2.5 bg-primary text-white text-xs font-semibold uppercase tracking-wider rounded-sm disabled:opacity-50 hover:bg-primary/90 transition-all">
+                {busy ? 'Enabling...' : 'Enable & Enter Admin Panel'}
+              </button>
+            </form>
+          ) : mfaFactorId ? (
             /* MFA Verification Step */
             <form onSubmit={verifyMfa} className="space-y-5">
               <div className="text-center space-y-1.5">
